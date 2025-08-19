@@ -1,0 +1,132 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      build-version:
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  define-shvdn-version:
+    name: Define SHVDN version
+    runs-on: ubuntu-latest
+    outputs:
+      # use `current_ver_result` of `calc-current-ver-from-ref-or-ver-input` if not empty, otherwise `latest_version_for_assemblies` of `fetch-latest-nightly-tag-name`
+      calced-version: ${{ steps.calc-current-ver-from-ref-or-ver-input.outputs.current_ver_result || steps.fetch-latest-nightly-tag-name.outputs.latest_version_for_assemblies }}
+    steps:
+    - name: Checkout Main Repo
+      uses: actions/checkout@v4
+    - name: Use Current Ref or Version Input as Current Version If Appropriate
+      id: calc-current-ver-from-ref-or-ver-input
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: |
+        custom_build_version_input="${{inputs.build-version}}"
+        if [ "$custom_build_version_input" != "" ]; then
+          echo "Build version input is filled, using the version input as the current version for the build. Version input: ${custom_build_version_input}"
+          current_ver_result=$(echo "${custom_build_version_input}")
+        else
+          if [[ "${GITHUB_REF}" =~ ^refs/tags/v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            echo "The current ref is a version tag, using the version tag as the current version for the build. Extracted version tag without the prefix \"v\": ${BASH_REMATCH[1]}"
+            current_ver_result=${BASH_REMATCH[1]}
+          fi
+        fi
+
+        echo "current_ver_result=${current_ver_result}" >> $GITHUB_OUTPUT
+        if [ "$current_ver_result" = '' ]; then
+          echo "The build version input is empty and the current ref name is not a version tag. Starting to fetch the latest nightly version tag..."
+        fi
+    # later steps are performed only if the CI system needs the latest nightly version tag to determine SHVDN version
+    - name: Checkout Nightly Release Repo
+      if: ${{ steps.calc-current-ver-from-ref-or-ver-input.outputs.current_ver_result == '' }}
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ format('{0}/scripthookvdotnet-nightly', github.repository_owner) }}
+        path: nightly-repo
+        fetch-depth: 0
+    - name: Fetch Latest Nightly Version Tag
+      if: ${{ steps.calc-current-ver-from-ref-or-ver-input.outputs.current_ver_result == '' }}
+      id: fetch-latest-nightly-tag-name
+      working-directory: nightly-repo
+      run: |
+        latest_nightly_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+        if [ latest_nightly_tag = "" ]; then
+          echo "There's no tags on the nightly repo."
+          exit 1
+        fi
+
+        # e.g. sed will transform "3.6.0-nightly.69" into "3.6.0.69"
+        latest_version_for_assemblies=$(echo ${latest_nightly_tag} | sed -E 's/v([0-9]{1,5})\.([0-9]{1,5})\.([0-9]{1,5})-nightly\.([0-9]{1,5})/\1.\2.\3.\4/')
+
+        if [ "$latest_version_for_assemblies" = "$latest_nightly_tag" ]; then
+          >&2 echo "Failed to create the version string for the ASI and the scripting DLLs because the version tag is ill-formed as a nightly version tag. Tag name: ${latest_nightly_tag}"
+          exit 1
+        fi
+
+        echo "Fetched latest version tag without the prefix \"v\": ${latest_version_for_assemblies}"
+        echo "latest_version_for_assemblies=${latest_version_for_assemblies}" >> "$GITHUB_OUTPUT"
+        exit 0
+
+  build:
+    runs-on: windows-latest
+    needs: [define-shvdn-version]
+    env:
+      SHVDN_VERSION: ${{needs.define-shvdn-version.outputs.calced-version}}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v2.0.0
+      with:
+        msbuild-architecture: x64
+        vs-version: '[17.13,17.15)'
+    - name: Add VSTest.Console to PATH
+      working-directory: ${{env.SOLUTION_FILE_PATH}}
+      run: |
+        $vstest_parent_path = (.github/workflows/find-vstest-path.ps1)
+        if ($vstest_parent_path -eq "")
+        {
+          throw "Failed to find the parent path of VSTest.Console."
+        }
+        echo $vstest_parent_path
+        Add-Content $env:GITHUB_PATH $vstest_parent_path
+
+    # We use a local subset of SHV SDK, where only `ScriptHookV.lib` and `main.h` are included out of the SDK because
+    # these files are necessary to build SHVDN.
+
+    - name: Restore NuGet packages
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+    - name: Build solution and put misc files for packing
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: |
+        msbuild /m /p:configuration=Release /p:platform=x64 ScriptHookVDotNet.sln `
+        && del bin\Release\ScriptHookVDotNet*.metagen
+    - name: Run tests
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: |
+        # Set verbosity to `minimal` so only failed tests would print (set to `normal` by default in VSTest.Console)
+        vstest.console "source\scripting_v3_tests\bin\x64\Release\net48\ScriptHookVDotNet_APIv3_Tests.dll" "/logger:console;verbosity=minimal"
+    - name: Put misc files for packing
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: |
+        $robocopy_process = Start-Process "robocopy" -ArgumentList ". bin\Release README.md ScriptHookVDotNet.ini LICENSE.txt COPYRIGHT.md THIRD-PARTY-NOTICES.md" -PassThru -Wait
+        if ($robocopy_process.ExitCode -ne 1) { exit 1 }
+        cd bin\Release `
+        && Get-ChildItem -File -Filter *.md | Rename-Item -NewName { $_.Name -replace '.md','.txt' }
+
+        mkdir "Docs","Licenses"
+        $shvdn_xml_docs_arg = (Get-ChildItem -File -Path "./" | Where-Object { $_.Name -match "^ScriptHookVDotNet[0-9]{1,2}.xml`$" } | ForEach-Object { $_.Name }) -join " "
+        $robocopy_process = Start-Process "robocopy" -ArgumentList ". Docs ${shvdn_xml_docs_arg} /move" -PassThru -Wait
+        if ($robocopy_process.ExitCode -ne 1) { exit 1 }
+        $robocopy_process = Start-Process "robocopy" -ArgumentList ". Licenses LICENSE.txt COPYRIGHT.txt THIRD-PARTY-NOTICES.txt /move" -PassThru -Wait
+        if ($robocopy_process.ExitCode -ne 1) { exit 1 }
+
+        cd ..\..\
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4.4.0
+      with:
+        name: ScriptHookVDotNet
+        path: bin/Release/*

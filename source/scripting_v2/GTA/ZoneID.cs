@@ -1,0 +1,116 @@
+//
+// Copyright (C) 2015 crosire & kagikn & contributors
+// License: https://github.com/scripthookvdotnet/scripthookvdotnet#license
+//
+
+namespace GTA
+{
+    /// <summary>
+    /// An enumeration of all gxt entry names of pop zones, which are listed in <c>popzone.ipl</c>.
+    /// </summary>
+    internal enum ZoneID
+    {
+        AIRP,
+        ALAMO,
+        ALTA,
+        ARMYB,
+        BANHAMC,
+        /* `BANHAMCA` is skipped because there is no GXT entry for it and this enum is internal */
+        BANNING,
+        BAYTRE,
+        BEACH,
+        BHAMCA,
+        BRADP,
+        BRADT,
+        BURTON,
+        CALAFB,
+        CANNY,
+        CCREAK,
+        CHAMH,
+        CHIL,
+        CHU,
+        CMSW,
+        CYPRE,
+        DAVIS,
+        DELBE,
+        DELPE,
+        DELSOL,
+        DESRT,
+        DOWNT,
+        DTVINE,
+        EAST_V,
+        EBURO,
+        ELGORL,
+        ELYSIAN,
+        GALFISH,
+        GALLI,
+        GOLF,
+        GRAPES,
+        GREATC,
+        HARMO,
+        HAWICK,
+        HORS,
+        HUMLAB,
+        /// <summary>
+        /// The member for the zone <c>IsHeist</c> and its GXT name entry <c>IsHeistZone</c>, for Cayo Perico.
+        /// </summary>
+        /// <remarks>
+        /// The zone is first added in "The Cayo Perico Heist" update (first introduced into update.rpf in the online
+        /// version 1.52, whose build number is 2189 for PC version).
+        /// </remarks>
+        ISHEISTZONE,
+        JAIL,
+        KOREAT,
+        LACT,
+        LAGO,
+        LDAM,
+        LEGSQU,
+        LMESA,
+        LOSPUER,
+        MIRR,
+        MORN,
+        MOVIE,
+        MTCHIL,
+        MTGORDO,
+        MTJOSE,
+        MURRI,
+        NCHU,
+        NOOSE,
+        OBSERV,
+        OCEANA,
+        PALCOV,
+        PALETO,
+        PALFOR,
+        PALHIGH,
+        PALMPOW,
+        PBLUFF,
+        PBOX,
+        PROCOB,
+        PROL,
+        RANCHO,
+        RGLEN,
+        RICHM,
+        ROCKF,
+        RTRAK,
+        SANAND,
+        SANCHIA,
+        SANDY,
+        SKID,
+        SLAB,
+        STAD,
+        STRAW,
+        TATAMO,
+        TERMINA,
+        TEXTI,
+        TONGVAH,
+        TONGVAV,
+        VCANA,
+        VESP,
+        VINE,
+        WINDF,
+        WVINE,
+        ZANCUDO,
+        ZP_ORT,
+        ZQ_UAR,
+    }
+}

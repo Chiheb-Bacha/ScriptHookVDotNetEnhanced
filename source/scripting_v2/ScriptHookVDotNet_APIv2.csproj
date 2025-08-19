@@ -1,0 +1,97 @@
+﻿<Project>
+    <PropertyGroup>
+      <BaseIntermediateOutputPath>..\..\intermediate\ScriptHookVDotNet2\</BaseIntermediateOutputPath>
+    </PropertyGroup>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <RootNamespace>GTA</RootNamespace>
+    <Title>ScriptHookVDotNet2</Title>
+    <AssemblyName>ScriptHookVDotNet2</AssemblyName>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Platforms>x64</Platforms>
+    <NoWarn>1591</NoWarn>
+    <DebugType>full</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <DocumentationFile>..\..\bin\Release\ScriptHookVDotNet2.xml</DocumentationFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <PathMap>$(MSBuildProjectDirectory)=$(AssemblyName)</PathMap>
+  </PropertyGroup>
+  <PropertyGroup>
+    <Version>2.11.6</Version>
+    <FileVersion>2.11.6</FileVersion>
+    <AssemblyVersion>2.11.6</AssemblyVersion>
+    <Authors>crosire &amp; kagikn &amp; contributors</Authors>
+    <Company></Company>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <RepositoryUrl>https://github.com/scripthookvdotnet/scripthookvdotnet</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>$(RepositoryUrl)</PackageProjectUrl>
+    <PackageReleaseNotes>https://github.com/scripthookvdotnet/scripthookvdotnet/releases</PackageReleaseNotes>
+    <Description>The developer SDK for ScriptHookVDotNet v2 scripts for Grand Theft Auto V.</Description>
+    <Copyright>Copyright © 2015 crosire &amp; kagikn</Copyright>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <OutputPath>..\..\bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <Optimize>false</Optimize>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <OutputPath>..\..\bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="..\..\LICENSE.txt">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\ScriptHookVDotNet.vcxproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <!-- Fix some code constructs in the compiled C# code that can normally only be generated with C++/CLI, to retain compatibility with older ScriptHookVDotNet versions -->
+  <UsingTask TaskName="ReplaceTextInFile" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <File ParameterType="Microsoft.Build.Framework.ITaskItem" Required="true" />
+      <PatternExpression ParameterType="System.String" Required="true" />
+      <ReplacementExpression ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Fragment" Language="cs"><![CDATA[
+          string text = System.IO.File.ReadAllText(File.ItemSpec);
+          text = System.Text.RegularExpressions.Regex.Replace(text, PatternExpression, ReplacementExpression);
+          System.IO.File.WriteAllText(File.ItemSpec, text);
+        ]]></Code>
+    </Task>
+  </UsingTask>
+  <Target Name="AfterCompile">
+    <PropertyGroup>
+      <ILDasmExe>$(TargetFrameworkSDKToolsDirectory)\ildasm.exe</ILDasmExe>
+      <ILDasmExeCommandLineArgs>/quoteallnames /unicode</ILDasmExeCommandLineArgs>
+      <ILDasmExeCommandLineArgs Condition="'$(DebugType)' != 'none'">$(ILDasmExeCommandLineArgs) /linenum</ILDasmExeCommandLineArgs>
+      <ILAsmExe>$(TargetedFrameworkDir)\ilasm.exe</ILAsmExe>
+      <ILAsmCommandLineArgs>/dll /pe64 /x64 /alignment=$(FileAlignment)</ILAsmCommandLineArgs>
+      <ILAsmCommandLineArgs Condition="'$(Optimize)' == 'true'">$(ILAsmCommandLineArgs) /optimize</ILAsmCommandLineArgs>
+      <ILAsmCommandLineArgs Condition="'$(DebugType)' != 'none'">$(ILAsmCommandLineArgs) /debug=impl</ILAsmCommandLineArgs>
+      <ILAsmCommandLineArgs Condition="'$(HighEntropyVA)' == 'true'">$(ILAsmCommandLineArgs) /highentropyva</ILAsmCommandLineArgs>
+    </PropertyGroup>
+    <Exec Command="&quot;$(ILDasmExe)&quot; /nobar $(ILDasmExeCommandLineArgs) /out=&quot;@(IntermediateAssembly->'%(RelativeDir)%(Filename)_repack.il')&quot; &quot;@(IntermediateAssembly)&quot;" />
+    <ReplaceTextInFile File="@(IntermediateAssembly->'%(RelativeDir)%(Filename)_repack.il')" PatternExpression="int32 ('GTA'\.'UI'::)?('WIDTH'|'HEIGHT')" ReplacementExpression="int32 modopt([mscorlib]System.Runtime.CompilerServices.IsConst) $1$2" />
+    <Exec Command="&quot;$(ILAsmExe)&quot; /nologo /quiet $(ILAsmCommandLineArgs) /out=&quot;@(IntermediateAssembly)&quot; /resource=&quot;@(IntermediateAssembly->'%(RelativeDir)%(Filename)_repack.res')&quot; &quot;@(IntermediateAssembly->'%(RelativeDir)%(Filename)_repack.il')&quot;" />
+  </Target>
+</Project>
