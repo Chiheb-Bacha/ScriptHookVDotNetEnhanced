@@ -2,7 +2,7 @@ Script Hook V .Net Enhanced (SHVDNE)
 ============================
 
 [![Downloads](https://img.shields.io/github/downloads/Chiheb-Bacha/scripthookvdotnetenhanced/total?label=Downloads)](https://github.com/Chiheb-Bacha/scripthookvdotnetenhanced/releases)
-[![Latest Release](https://img.shields.io/github/v/release/Chiheb-Bacha/scripthookvdotnetenhanced?label=Version)](https://github.com/Chiheb-Bacha/scripthookvdotnetenhanced/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/Chiheb-Bacha/scripthookvdotnetenhanced?include_prereleases&label=Version)](https://github.com/Chiheb-Bacha/scripthookvdotnetenhanced/releases/latest)
 [![License](https://img.shields.io/github/license/Chiheb-Bacha/scripthookvdotnetenhanced?color=%232A922A)](LICENSE.md)
 
 This is an ASI plugin for Grand Theft Auto V Legacy & Enhanced editions, based on the C++ ScriptHook by Alexander Blade, which allows running scripts written in any .NET language in-game.
