@@ -645,7 +645,7 @@ static void ScriptHookVDotNet_ManagedInit()
         console->CommandHistory = stashedConsoleCommandHistory;
 
         // Print welcome message
-        console->PrintInfo("~c~--- Community Script Hook V .NET " SHVDN_VERSION " ---");
+        console->PrintInfo("~c~--- Script Hook V .Net Enhanced " SHVDN_VERSION " ---");
         console->PrintInfo("~c~--- Type \"Help()\" to print an overview of available commands ---");
 
         ScriptHookVDotNet::SendPendingMessagesToConsole(console, pendingLogMessageInfo);
@@ -762,7 +762,10 @@ static void ScriptHookVDotNet_ManagedKeyboardMessage(unsigned long keycode, bool
         if (keydown && AreAllKeysPressed(ScriptHookVDotNet::reloadKeyBinding))
         {
             // Force a reload
-            ScriptHookVDotNet::Reload();
+            
+            // This causes the Game to Lag and freeze, until reloadKeyBinding is changed to "None" in the .ini and the old reloadKeyBinding is pressed again.
+            // TODO: Fix this.
+            // ScriptHookVDotNet::Reload();
             return;
         }
         if (keydown && AreAllKeysPressed(ScriptHookVDotNet::consoleKeyBinding))

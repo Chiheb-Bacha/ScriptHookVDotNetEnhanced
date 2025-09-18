@@ -1,12 +1,12 @@
 # Short version for non-lawyers:
-ScriptHookVDotNet is licensed under zlib license.
+ScriptHookVDotNetEnhanced is licensed under zlib license.
 
 # Longer version:
-Except as otherwise noted (below and/or in individual files), ScriptHookVDotNet is licensed under
+Except as otherwise noted (below and/or in individual files), ScriptHookVDotNetEnhanced is licensed under
 the [zlib license](LICENSE.txt). See [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES.md) for third party
-notices for libraries used in ScriptHookVDotNet.
+notices for libraries used in ScriptHookVDotNetEnhanced.
 
-ScriptHookVDotNet includes portions of source code written by third parties.
+ScriptHookVDotNetEnhanced includes portions of source code written by third parties.
 The following third party source code are included, and carry their own copyright notices and
 license terms:
 

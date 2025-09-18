@@ -1,5 +1,6 @@
 //
 // Copyright (C) 2015 crosire & kagikn & contributors
+// Copyright (C) 2025 Chiheb-Bacha
 // License: https://github.com/scripthookvdotnet/scripthookvdotnet#license
 //
 
@@ -7,6 +8,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System;
+using System.Globalization;
 
 namespace SHVDN
 {
@@ -71,6 +73,7 @@ namespace SHVDN
         /// <inheritdoc cref="FindPatternBmh(string, string, IntPtr, ulong)"/>
         public static unsafe byte* FindPatternBmh(string pattern, string mask)
         {
+            // LogMemPatternNotFound(pattern, mask, IntPtr.Zero, 0);
             ProcessModule module = Process.GetCurrentProcess().MainModule;
             return FindPatternBmh(pattern, mask, module.BaseAddress, (ulong)module.ModuleMemorySize);
         }
@@ -86,7 +89,7 @@ namespace SHVDN
             }
 
             ulong size = (ulong)module.ModuleMemorySize - ((ulong)startAddress - (ulong)module.BaseAddress);
-
+            // LogMemPatternNotFound(pattern, mask, startAddress, size);
             return FindPatternBmh(pattern, mask, startAddress, size);
         }
 
@@ -130,9 +133,42 @@ namespace SHVDN
                 }
             }
 
-            LogMemPatternNotFound(pattern, mask, startAddress, size);
+             LogMemPatternNotFound(pattern, mask, startAddress, size);
 
             return null;
+        }
+
+        public static unsafe byte* FindPatternBmh(string pattern) => FindPatternBmh(pattern, IntPtr.Zero);
+
+        public static unsafe byte* FindPatternBmh(string pattern, IntPtr startAddress)
+        {
+            string[] array = pattern.Split(' ');
+            StringBuilder stringBuilder = new StringBuilder(array.Length);
+            StringBuilder stringBuilder2 = new StringBuilder(array.Length);
+            string[] array2 = array;
+            foreach (string text in array2)
+            {
+                if (!string.IsNullOrEmpty(text))
+                {
+                    if (text == "??" || text == "?")
+                    {
+                        stringBuilder.Append("\0");
+                        stringBuilder2.Append("?");
+                    }
+                    else
+                    {
+                        char value = (char)short.Parse(text, NumberStyles.AllowHexSpecifier);
+                        stringBuilder.Append(value);
+                        stringBuilder2.Append("x");
+                    }
+                }
+            }
+
+            if (startAddress != IntPtr.Zero)
+            {
+                return FindPatternBmh(stringBuilder.ToString(), stringBuilder2.ToString(), startAddress);
+            }
+            return FindPatternBmh(stringBuilder.ToString(), stringBuilder2.ToString());
         }
 
         [Conditional("DEBUG")]

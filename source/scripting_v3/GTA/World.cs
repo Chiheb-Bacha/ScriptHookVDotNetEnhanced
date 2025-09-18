@@ -471,7 +471,10 @@ namespace GTA
         /// A fast way to get the total number of <see cref="Prop"/>s in the world associated with a <see cref="Pickup"/>.
         /// </summary>
         public static int PickupObjectCount => SHVDN.NativeMemory.GetPickupObjectCount();
-
+        /// <summary>
+        /// A fast way to get the total number of <see cref="Pickup"/>s in the world.
+        /// </summary>
+        public static int PickupObjectPlacementCount => SHVDN.NativeMemory.GetPickupObjectPlacementCount();
         /// <summary>
         /// A fast way to get the total number of <see cref="Building"/>s spawned in the world.
         /// </summary>
@@ -518,6 +521,10 @@ namespace GTA
         /// The total number of <see cref="Prop"/>s in the world associated with a <see cref="Pickup"/> that can exist in the world.
         /// </summary>
         public static int PickupObjectCapacity => SHVDN.NativeMemory.GetPickupObjectCapacity();
+        /// <summary>
+        /// The total number of <see cref="Pickup"/>s that can exist in the world.
+        /// </summary>
+        public static int PickupObjectPlacementCapacity => SHVDN.NativeMemory.GetPickupObjectPlacementCapacity();
         /// <summary>
         /// The total number of <see cref="Projectile"/>s that can exist in the world.
         /// Always returns 50 currently since the limit is hard-coded in the exe.
@@ -758,6 +765,26 @@ namespace GTA
             return Array.ConvertAll(
                 SHVDN.NativeMemory.GetPickupObjectHandles(position.ToInternalFVector3(), radius),
                 handle => new Prop(handle));
+        }
+        /// <summary>
+        /// Gets an <c>array</c> of all <see cref="PickupObjectPlacement"/>s in the World.
+        /// </summary>
+        public static PickupObjectPlacement[] GetAllPickupObjectPlacements()
+        {
+            return Array.ConvertAll(
+                SHVDN.NativeMemory.GetPickupObjectPlacementAddresses(),
+                address => new PickupObjectPlacement(address));
+        }
+        /// <summary>
+        /// Gets an <c>array</c> of all pickup placements as <see cref="PickupObjectPlacement"/>s in a given region in the World.
+        /// </summary>
+        /// <param name="position">The position to check the <see cref="Entity"/> against.</param>
+        /// <param name="radius">The maximum distance from the <paramref name="position"/> to detect <see cref="PickupObjectPlacement"/>s.</param>
+        public static PickupObjectPlacement[] GetNearbyPickupObjectPlacements(Vector3 position, float radius)
+        {
+            return Array.ConvertAll(
+                SHVDN.NativeMemory.GetPickupObjectPlacementAddresses(position.ToInternalFVector3(), radius),
+                address => new PickupObjectPlacement(address));
         }
         /// <summary>
         /// Gets the closest <see cref="Projectile"/> to a given position in the World.

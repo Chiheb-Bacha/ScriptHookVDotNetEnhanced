@@ -617,7 +617,7 @@ namespace GTA.Native
         Guido01 = 3333724719u,
         GunVend01 = 3005388626u,
         Hacker = 2579169528u,
-        HeadTargets = 1173958009u,
+        HeadTargets = 1173958009u, // If used to create a Ped, the Ped instance is null.
         HeliStaff01 = 431423238u,
         Hippie01 = 4030826507u,
         Hotposh01 = 2526768638u,
@@ -662,9 +662,9 @@ namespace GTA.Native
         RivalPaparazzi = 1624626906u,
         SecuroGuardMale01 = 3660355662u,
         ShopKeep01 = 416176080u,
-        SlodHuman = 1057201338u,
-        SlodLargeQuadped = 2238511874u,
-        SlodSmallQuadped = 762327283u,
+        SlodHuman = 1057201338u, // If used to create a Ped, the Game crashes.
+        SlodLargeQuadped = 2238511874u, // If used to create a Ped, the Game crashes.
+        SlodSmallQuadped = 762327283u, // If used to create a Ped, the Game crashes.
         SmugMech01 = 3446096293u,
         SpyActor = 2886641112u,
         SpyActress = 1535236204u,

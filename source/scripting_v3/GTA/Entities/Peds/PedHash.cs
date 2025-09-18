@@ -857,7 +857,7 @@ namespace GTA
         Hasjew01AMM = 1809430156u,
         Hasjew01AMY = 3782053633u,
         HazmatWorker01SMM = 3688051673u,
-        HeadTargets = 1173958009u,
+        HeadTargets = 1173958009u, // If used to create a Ped, the Ped instance is null.
         Highsec01SMM = 4049719826u,
         Highsec02SMM = 691061163u,
         Highsec03SMM = 518696223u,
@@ -1000,9 +1000,9 @@ namespace GTA
         Skidrow01AFM = 2962707003u,
         Skidrow01AMM = 32417469u,
         Slasher01GMM = 662575004u,
-        SlodHuman = 1057201338u,
-        SlodSmallQuadped = 762327283u,
-        SlodLargeQuadped = 2238511874u,
+        SlodHuman = 1057201338u, // If used to create a Ped, the Game crashes.
+        SlodSmallQuadped = 762327283u, // If used to create a Ped, the Game crashes.
+        SlodLargeQuadped = 2238511874u, // If used to create a Ped, the Game crashes.
         SmartCasPat01AFY = 279228114u,
         SmartCasPat01AMY = 553826858u,
         Snowcop01SMM = 451459928u,

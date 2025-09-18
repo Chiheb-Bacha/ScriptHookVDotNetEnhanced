@@ -2,11 +2,11 @@
 using namespace System::Reflection;
 
 // The file encoding has to be UTF-8 with BOM and literal strings have to be wstring so the ANSI encoding won't have influence on the literal strings
-[assembly:AssemblyTitle(L"Community Script Hook V .NET")];
-[assembly:AssemblyDescription(L"An ASI plugin for Grand Theft Auto V, which allows running scripts written in any .NET language in-game.")];
-[assembly:AssemblyCompany(L"crosire & kagikn & contributors")];
+[assembly:AssemblyTitle(L"Script Hook V .Net Enhanced")];
+[assembly:AssemblyDescription(L"An ASI plugin for Grand Theft Auto V Legacy & Enhanced editions, which allows running scripts written in any .NET language in-game.")];
+[assembly:AssemblyCompany(L"crosire & kagikn & Chiheb-Bacha & contributors")];
 [assembly:AssemblyProduct(L"ScriptHookVDotNet")];
-[assembly:AssemblyCopyright(L"Copyright © 2015 crosire & kagikn")];
+[assembly:AssemblyCopyright(L"Copyright © 2015 crosire & kagikn, © 2025 Chiheb-Bacha")];
 [assembly:AssemblyVersion(SHVDN_VERSION)];
 [assembly:AssemblyFileVersion(SHVDN_VERSION)];
 // Sign with a strong name to distinguish from older versions and cause .NET framework runtime to bind the correct assemblies

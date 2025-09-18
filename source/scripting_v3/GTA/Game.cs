@@ -1,5 +1,6 @@
 //
 // Copyright (C) 2015 crosire & kagikn & contributors
+// Copyright (C) 2025 Chiheb-Bacha
 // License: https://github.com/scripthookvdotnet/scripthookvdotnet#license
 //
 
@@ -71,6 +72,11 @@ namespace GTA
         #endregion
 
         /// <summary>
+        /// Gets a value indicating whether the main module of the current process is GTA5_Enhanced.exe.
+        /// </summary>
+        public static bool isEnhanced => SHVDN.NativeMemory.s_isEnhanced;
+
+        /// <summary>
         /// Gets the local <see cref="GTA.Player"/> that you are controlling.
         /// </summary>
         public static Player Player
@@ -127,7 +133,7 @@ namespace GTA
         public static Language Language => Function.Call<Language>(Hash.GET_CURRENT_LANGUAGE);
 
         /// <summary>
-        /// Gets the "FileVersion" resource value of GTA5.exe, which is the same as what SHV's function
+        /// Gets the "FileVersion" resource value of GTA5.exe or GTA5_Enhanced.exe, which is the same as what SHV's function
         /// <c>getGameVersionInfo</c> retrieves, as a <see cref="System.Version"/> instance.
         /// </summary>
         public static Version FileVersion => SHVDN.NativeMemory.GameFileVersion;
