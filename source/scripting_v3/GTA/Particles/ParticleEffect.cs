@@ -5,6 +5,7 @@
 
 using GTA.Math;
 using GTA.Native;
+using SHVDN;
 using System;
 using System.Drawing;
 
@@ -68,13 +69,13 @@ namespace GTA
                     return Vector3.Zero;
                 }
 
-                address = SHVDN.MemDataMarshal.ReadAddress(address + 32);
+                address = SHVDN.MemDataMarshal.ReadAddress(address + NativeMemory.PtfxBaseOffset);
                 if (address == IntPtr.Zero)
                 {
                     return Vector3.Zero;
                 }
 
-                return new Vector3(SHVDN.MemDataMarshal.ReadVector3(address + 144));
+                return new Vector3(SHVDN.MemDataMarshal.ReadVector3(address + 144)); // 0x90. TODO: get it from SET_PARTICLE_FX_LOOPED_OFFSETS
             }
             set
             {
@@ -84,7 +85,7 @@ namespace GTA
                     return;
                 }
 
-                address = SHVDN.MemDataMarshal.ReadAddress(address + 32);
+                address = SHVDN.MemDataMarshal.ReadAddress(address + NativeMemory.PtfxBaseOffset);
                 if (address == IntPtr.Zero)
                 {
                     return;
@@ -105,6 +106,7 @@ namespace GTA
                 Vector3 currentOffset = Offset;
                 Function.Call(Hash.SET_PARTICLE_FX_LOOPED_OFFSETS, Handle, currentOffset.X, currentOffset.Y, currentOffset.Z, value.X, value.Y, value.Z);
             }
+            // TODO: add a getter.
         }
 
         /// <summary>
@@ -115,12 +117,13 @@ namespace GTA
             get
             {
                 IntPtr address = MemoryAddress;
+
                 if (address == IntPtr.Zero)
                 {
                     return default;
                 }
 
-                address = SHVDN.MemDataMarshal.ReadAddress(address + 32) + 320;
+                address = SHVDN.MemDataMarshal.ReadAddress(address + NativeMemory.PtfxBaseOffset) + NativeMemory.PtfxColorOffset;
                 byte r = Convert.ToByte(SHVDN.MemDataMarshal.ReadFloat(address) * 255f);
                 byte g = Convert.ToByte(SHVDN.MemDataMarshal.ReadFloat(address + 4) * 255f);
                 byte b = Convert.ToByte(SHVDN.MemDataMarshal.ReadFloat(address + 8) * 255f);
@@ -135,7 +138,7 @@ namespace GTA
                     return;
                 }
 
-                address = SHVDN.MemDataMarshal.ReadAddress(address + 32) + 320;
+                address = SHVDN.MemDataMarshal.ReadAddress(address + NativeMemory.PtfxBaseOffset) + NativeMemory.PtfxColorOffset;
                 SHVDN.MemDataMarshal.WriteFloat(address, value.R / 255f);
                 SHVDN.MemDataMarshal.WriteFloat(address + 4, value.G / 255f);
                 SHVDN.MemDataMarshal.WriteFloat(address + 8, value.B / 255f);
@@ -161,7 +164,7 @@ namespace GTA
                     return 0.0f;
                 }
 
-                return SHVDN.MemDataMarshal.ReadFloat(SHVDN.MemDataMarshal.ReadAddress(address + 32) + 336);
+                return SHVDN.MemDataMarshal.ReadFloat(SHVDN.MemDataMarshal.ReadAddress(address + NativeMemory.PtfxBaseOffset) + NativeMemory.PtfxScaleOffset);
             }
             set
             {
@@ -171,7 +174,7 @@ namespace GTA
                     return;
                 }
 
-                SHVDN.MemDataMarshal.WriteFloat(SHVDN.MemDataMarshal.ReadAddress(address + 32) + 336, value);
+                SHVDN.MemDataMarshal.WriteFloat(SHVDN.MemDataMarshal.ReadAddress(address + NativeMemory.PtfxBaseOffset) + NativeMemory.PtfxScaleOffset, value);
             }
         }
 
@@ -188,7 +191,7 @@ namespace GTA
                     return 0.0f;
                 }
 
-                return SHVDN.MemDataMarshal.ReadFloat(SHVDN.MemDataMarshal.ReadAddress(address + 32) + 384);
+                return SHVDN.MemDataMarshal.ReadFloat(SHVDN.MemDataMarshal.ReadAddress(address + NativeMemory.PtfxBaseOffset) + NativeMemory.PtfxRangeOffset);
             }
             set => Function.Call(Hash.SET_PARTICLE_FX_LOOPED_FAR_CLIP_DIST, Handle, value);
         }

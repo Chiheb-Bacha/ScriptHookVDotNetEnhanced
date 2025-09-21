@@ -130,7 +130,7 @@ namespace GTA
         /// <summary>
         /// Gets the current game language.
         /// </summary>
-        public static Language Language => Function.Call<Language>(Hash.GET_CURRENT_LANGUAGE);
+        public static Language Language => Function.Call<Language>(Hash.GET_CURRENT_LANGUAGE); // TODO: add a setter that uses NativeMemory
 
         /// <summary>
         /// Gets the "FileVersion" resource value of GTA5.exe or GTA5_Enhanced.exe, which is the same as what SHV's function

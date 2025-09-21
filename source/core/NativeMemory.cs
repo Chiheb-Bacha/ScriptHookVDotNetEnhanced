@@ -99,11 +99,13 @@ namespace SHVDN
             NullString = StringMarshal.StringToCoTaskMemUtf8(string.Empty); // ""
             CellEmailBcon = StringMarshal.StringToCoTaskMemUtf8("CELL_EMAIL_BCON"); // "~a~~a~~a~~a~~a~~a~~a~~a~~a~~a~"
 
-            GameFileVersion = new Version(FileVersionInfo.GetVersionInfo(
-                Process.GetCurrentProcess().MainModule.FileName).FileVersion
-                );
-
             s_isEnhanced = Process.GetCurrentProcess().MainModule.ModuleName.Equals("GTA5_Enhanced.exe");
+
+            // There are hundreds of checks against GameFileVersion in the APIs, which only take Legacy into consideration.
+            // That means, conditions could apply to Enhanced when they shouldn't, given that its GameFileVersion is lower than that of Legacy.
+            // For that reason, we bump the Major if Enhanced is running, instead of modifying hundreds of checks in the API.
+            var version = new Version(FileVersionInfo.GetVersionInfo(Process.GetCurrentProcess().MainModule.FileName).FileVersion);
+            GameFileVersion =  s_isEnhanced ? new Version(version.Major + 1, version.Minor, version.Build, version.Revision) : version;
 
             byte* address;
             IntPtr startAddressToSearch;
@@ -112,15 +114,24 @@ namespace SHVDN
 
             if (s_isEnhanced)
             {
-                address = MemScanner.FindPatternBmh("e8 ? ? ? ? 4c 89 f0 48 c1 e0");
+                address = MemScanner.FindPatternBmh("48 8b 14 08 48 89 f1 e8");
                 if (address != null)
                 {
-                    s_fwRefAwareBaseImpl__AddKnownRef = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr, void>)(new IntPtr(
-                        *(int*)(address + 58) + address + 62));
-                    s_fwRefAwareBaseImpl__RemoveKnownRef = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr, void>)(new IntPtr(
-                        *(int*)(address + 1) + address + 5));
+                    // This function encompasses both AddKnownRef and RemoveKnownRef.
+                    // In Legacy, both functions include a Lock then Unlock to what seems to be a synchronization lock.
+                    // In Enhanced, that is done outside of the two functions, but inside this new function.
+                    // This has the same effect as to what SHVDN is doing in legacy.
+                    // This new function also checks that the passed _lhs is present inside the pool of knownRefs before trying to remove it.
+                    //
+                    // SHVDN uses these functions when setting ProjectileRocket.Target, but doesn't seem to have any effect in both Editions.
+                    // If you lock on a Target with a homing missile, shoot it, then change the Target, the missile will stop following the old target.
+                    // It doesn't however redirect to the new target.
+                    // It could have different triggers that I'm not aware of, so I might revisit this in the future.
+                    s_fwRefAwareBaseImpl__RemoveThenAddKnownRef = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr, void>)(new IntPtr(
+                        *(int*)(address + 8) + address + 12));
                 }
-            } else
+            }
+            else
             {
                 address = MemScanner.FindPatternBmh("\x74\x27\x48\x8D\x7E\x18\x48\x8B\x0F\x48\x3B\xCB\x74\x1B", "xxxxxxxxxxxxxx");
                 if (address != null)
@@ -153,6 +164,58 @@ namespace SHVDN
                     s_getPtfxAddressFunc = (delegate* unmanaged[Stdcall]<int, ulong>)(
                         new IntPtr(*(int*)(address - 10) + address - 6));
                 }
+            }
+
+            if (s_isEnhanced)
+            {
+                address = MemScanner.FindPatternBmh("41 0f 28 9e ? ? ? ? f3 41 0f 10 86");
+            }
+            else
+            {
+                address = MemScanner.FindPatternBmh("41 0f 28 96 ? ? ? ? f3 41 0f 10 8e");
+            }
+            if (address != null)
+            {
+                PtfxColorOffset = *(int*)(address + 4); // 0x140
+            }
+
+            if (s_isEnhanced)
+            {
+                address = MemScanner.FindPatternBmh("48 8b 45 ? 4d 85 ff");
+            }
+            else
+            {
+                address = MemScanner.FindPatternBmh("48 8b 48 ? 48 8d 54 24 ? 0f 28 d6");
+            }
+            if (address != null)
+            {
+                PtfxBaseOffset = (int)*(byte*)(address + 3); // 0x20
+            }
+
+            if (s_isEnhanced)
+            {
+                address = MemScanner.FindPatternBmh("0f 2e 05 ? ? ? ? 76 ? f3 0f 11 84"); // 0x184
+            }
+            else
+            {
+                address = MemScanner.FindPatternBmh("0f 2f 05 ? ? ? ? 76 ? 83 c9"); // 0x180
+            }
+            if (address != null)
+            {
+                PtfxRangeOffset = (int)*(byte*)(address - 4);
+            }
+
+            if (s_isEnhanced)
+            {
+                address = MemScanner.FindPatternBmh("41 0f 59 97 ? ? ? ? f3 0f 59 d0");
+            }
+            else
+            {
+                address = MemScanner.FindPatternBmh("f3 0f 10 83 ? ? ? ? 0f c6 c0 ? 0f 58 d1");
+            }
+            if (address != null)
+            {
+                PtfxScaleOffset = (int)*(byte*)(address + 4); // 0x150
             }
 
             if (s_isEnhanced)
@@ -2111,14 +2174,14 @@ namespace SHVDN
             #region -- Bypass model requests block for some models --
 
             // This enables to spawn some drawable objects without a dedicated collision (e.g. prop_fan_palm_01a).
+
             if (s_isEnhanced)
             {
-                // TODO: Find a pattern outside of the patching bytes.
-                address = MemScanner.FindPatternBmh("4c 8b 2c 01 4d 85 ed 0f 84");
+                address = MemScanner.FindPatternBmh("44 0f b6 b4 24 ? ? ? ? 41 20 f6");
                 if (address != null)
                 {
-                    address = address + 4;
-                    // Here we add a jmp 0x14 and nop the rest.
+                    address = address - 20;
+                    // Here we add a jmp 0x12 and nop the rest.
                     jmpPatchHelper(address, 0x12);
                 }
             }
@@ -2142,12 +2205,10 @@ namespace SHVDN
                 {
                     // The first pattern is not present in the current versions of Legacy. I am however unsure when it stopped working.
                     // For that reason, we look for another pattern when the first scan fails in newer versions of legacy.
-
-                    // TODO: Find a pattern outside of the patching bytes.
-                    address = MemScanner.FindPatternBmh("4c 8b f8 48 85 C0 0F 84 ? ? ? ? 8B 48");
+                    address = MemScanner.FindPatternBmh("45 84 e4 74 ? e8 ? ? ? ? 48 85 c0");
                     if (address != null)
                     {
-                        address = address + 3;
+                        address = address - 24;
                         // Here we add a jmp 0x16 and nop the rest.
                         jmpPatchHelper(address, 0x16);
                     }
@@ -2156,7 +2217,7 @@ namespace SHVDN
 
             #endregion
             #region -- Bypass is player model allowed to spawn checks --
-            address = s_isEnhanced ? MemScanner.FindPatternBmh("74 ? e8 ? ? ? ? 48 8b b0") : MemScanner.FindPatternBmh("40 53 48 83 ec ? e8 ? ? ? ? 48 8b d8 48 85 c0 74 ? 48 8b 10 48 8b c8 ff 52 ?");
+            address = s_isEnhanced ? MemScanner.FindPatternBmh("74 ? e8 ? ? ? ? 48 8b b0") : MemScanner.FindPatternBmh("40 53 48 83 ec ? e8 ? ? ? ? 48 8b d8 48 85 c0 74 ? 48 8b 10 48 8b c8 ff 52");
             address = address != null ? (address + 28) : null;
             if (address != null)
             {
@@ -2411,6 +2472,7 @@ namespace SHVDN
 
         private static delegate* unmanaged[Stdcall]<IntPtr, IntPtr, void> s_fwRefAwareBaseImpl__AddKnownRef;
         private static delegate* unmanaged[Stdcall]<IntPtr, IntPtr, void> s_fwRefAwareBaseImpl__RemoveKnownRef;
+        private static delegate* unmanaged[Stdcall]<IntPtr, IntPtr, void> s_fwRefAwareBaseImpl__RemoveThenAddKnownRef;
 
         #endregion
 
@@ -2464,7 +2526,14 @@ namespace SHVDN
                 return;
             }
 
+            if (s_isEnhanced)
+            {
+                s_fwRefAwareBaseImpl__RemoveThenAddKnownRef(lhs, rhs);
+                return;
+            }
+
             IntPtr oldFwRegdRef = (IntPtr)(*(long*)(lhs));
+
             if (oldFwRegdRef == rhs)
             {
                 return;
@@ -2478,6 +2547,7 @@ namespace SHVDN
             *(ulong*)lhs = (ulong)rhs;
 
             IntPtr newFwRegdRef = (IntPtr)(*(long*)(lhs));
+
             if (newFwRegdRef != IntPtr.Zero)
             {
                 s_fwRefAwareBaseImpl__AddKnownRef(newFwRegdRef, lhs);
@@ -8117,6 +8187,10 @@ namespace SHVDN
         private static ulong s_PtfxVfuncSecondArgumentFuncAddr;
         private static delegate* unmanaged[Cdecl]<ulong, ulong, ulong, byte> s_isPtfxEntityUsableVFunc;
         private static ulong s_ptfxEntityVPtr;
+        public static int PtfxBaseOffset { get; }
+        public static int PtfxColorOffset { get; }
+        public static int PtfxRangeOffset { get; }
+        public static int PtfxScaleOffset { get; }
         // should be CGameScriptHandler::GetScriptEntity
         private static delegate* unmanaged[Stdcall]<int, ulong> s_getScriptEntity;
 
@@ -8155,6 +8229,7 @@ namespace SHVDN
 
             try
             {
+                // Cache VPtr and VFunc
                 if (s_isPtfxEntityUsableVFunc == null || s_ptfxEntityVPtr == 0)
                 {
                     s_ptfxEntityVPtr = *(ulong*)entity;
@@ -8164,7 +8239,7 @@ namespace SHVDN
                         return false;
                     }
 
-                    IntPtr funcPtr = new IntPtr(*(long*)(s_ptfxEntityVPtr + 0x28));
+                    IntPtr funcPtr = new IntPtr(*(long*)(s_ptfxEntityVPtr + 0x28)); // TODO: find this offset dynamically.
 
                     if (funcPtr == IntPtr.Zero)
                     {
@@ -8210,8 +8285,7 @@ namespace SHVDN
                     ulong A = *(ulong*)(node + 1);
                     if (A == 0) return IntPtr.Zero;
 
-                    ulong obj = *(ulong*)(A + 0x20);
-                    return (IntPtr)obj;
+                    return (IntPtr)A;
                 }
                 node = *(ulong**)(node + 2);
             }
