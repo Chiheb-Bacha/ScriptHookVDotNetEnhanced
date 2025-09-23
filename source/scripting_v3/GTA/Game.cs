@@ -5,6 +5,7 @@
 //
 
 using GTA.Native;
+using SHVDN;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -801,6 +802,28 @@ namespace GTA
                 byte* address = (startAddress == IntPtr.Zero ? SHVDN.MemScanner.FindPatternNaive(pattern, mask) : SHVDN.MemScanner.FindPatternNaive(pattern, mask, startAddress));
                 return address == null ? IntPtr.Zero : new IntPtr(address);
             }
+        }
+        /// <summary>
+        /// Searches a script for a memory pattern.
+        /// </summary>
+        /// <param name="pattern">The pattern.</param>
+        /// <param name="scriptHash">The hash of the script to search in.</param>
+        /// <returns>The address of a region matching the pattern, or <see cref="IntPtr.Zero" /> if none was found.</returns>
+        /// <remarks>This function takes the Cheat Engine/IDA format ("48 8B 0D ?? ?? ? ? 44 8B C6 8B D5 8B D8" for example, where ?? and ? are wildcards).</remarks>
+        public static IntPtr FindPatternInScript(string pattern, int scriptHash)
+        {
+            return NativeMemory.FindPatternInScript(pattern, scriptHash);
+        }
+
+        /// <summary>
+        /// Gets the the script global, which can be used with <see cref="NativeMemory.GetGlobalPtr" />.
+        /// </summary>
+        /// <param name="address">The address returned from a pattern search.</param>
+        /// <param name="offset">The offset from the given address, where the global can be found.</param>
+        /// <returns>The value of the script global.</returns>
+        public static int GetScriptGlobalFromAddress(IntPtr address, int offset)
+        {
+            return NativeMemory.GetScriptGlobalFromAddress(address, offset);
         }
     }
 }

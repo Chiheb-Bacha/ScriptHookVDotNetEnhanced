@@ -138,9 +138,11 @@ namespace SHVDN
             return null;
         }
 
-        public static unsafe byte* FindPatternBmh(string pattern) => FindPatternBmh(pattern, IntPtr.Zero);
+        public static unsafe byte* FindPatternBmh(string pattern) => FindPatternBmh(pattern, IntPtr.Zero, 0);
 
-        public static unsafe byte* FindPatternBmh(string pattern, IntPtr startAddress)
+        public static unsafe byte* FindPatternBmh(string pattern, IntPtr startAddress) => FindPatternBmh(pattern, startAddress, 0);
+
+        public static unsafe byte* FindPatternBmh(string pattern, IntPtr startAddress, ulong size)
         {
             string[] array = pattern.Split(' ');
             StringBuilder stringBuilder = new StringBuilder(array.Length);
@@ -163,9 +165,13 @@ namespace SHVDN
                     }
                 }
             }
-
+            
             if (startAddress != IntPtr.Zero)
             {
+                if (size != 0)
+                {
+                    return FindPatternBmh(stringBuilder.ToString(), stringBuilder2.ToString(), startAddress, size);
+                }
                 return FindPatternBmh(stringBuilder.ToString(), stringBuilder2.ToString(), startAddress);
             }
             return FindPatternBmh(stringBuilder.ToString(), stringBuilder2.ToString());

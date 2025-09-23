@@ -41,7 +41,7 @@ namespace GTA
 
                 int offset = Game.FileVersion switch
                 {
-                    Version v when v >= VersionConstsForGameVersion.v1_0_944_2 => 0x5E,
+                    Version v when v >= VersionConstsForGameVersion.v1_0_944_2 => 0x5E, // TODO: Find this offset dynamically
                     Version v when v >= VersionConstsForGameVersion.v1_0_463_1 => 0x5C,
                     _ => 0x58
                 };
@@ -66,7 +66,7 @@ namespace GTA
 
                 int offset = Game.FileVersion switch
                 {
-                    Version v when v >= VersionConstsForGameVersion.v1_0_944_2 => 0x60,
+                    Version v when v >= VersionConstsForGameVersion.v1_0_944_2 => 0x60, // TODO: Find this offset dynamically
                     Version v when v >= VersionConstsForGameVersion.v1_0_463_1 => 0x5E,
                     _ => 0x5A
                 };
@@ -103,7 +103,7 @@ namespace GTA
 
                 int offset = Game.FileVersion switch
                 {
-                    Version v when v >= VersionConstsForGameVersion.v1_0_944_2 => 0x5D,
+                    Version v when v >= VersionConstsForGameVersion.v1_0_944_2 => 0x5D, // TODO: Find this offset dynamically
                     Version v when v >= VersionConstsForGameVersion.v1_0_463_1 => 0x5B,
                     _ => 0x57
                 };
@@ -129,7 +129,7 @@ namespace GTA
 
                 int offset = Game.FileVersion switch
                 {
-                    Version v when v >= VersionConstsForGameVersion.v1_0_944_2 => 0x61,
+                    Version v when v >= VersionConstsForGameVersion.v1_0_944_2 => 0x61, // TODO: Find this offset dynamically
                     Version v when v >= VersionConstsForGameVersion.v1_0_463_1 => 0x5F,
                     _ => 0x5B
                 };
@@ -296,7 +296,7 @@ namespace GTA
                 Version gameVersion = Game.FileVersion;
                 if (gameVersion >= VersionConstsForGameVersion.v1_0_944_2)
                 {
-                    return (int)SHVDN.MemDataMarshal.ReadFloat(address + 0x58);
+                    return (int)SHVDN.MemDataMarshal.ReadFloat(address + 0x58); // TODO: Find this offset dynamically
                 }
                 else
                 {
@@ -327,7 +327,7 @@ namespace GTA
                 Version gameVersion = Game.FileVersion;
                 if (gameVersion >= VersionConstsForGameVersion.v1_0_944_2)
                 {
-                    return SHVDN.MemDataMarshal.ReadFloat(address + 0x58);
+                    return SHVDN.MemDataMarshal.ReadFloat(address + 0x58); // TODO: Find this offset dynamically
                 }
                 else
                 {
@@ -352,7 +352,7 @@ namespace GTA
                 Version gameVersion = Game.FileVersion;
                 if (gameVersion >= VersionConstsForGameVersion.v1_0_944_2)
                 {
-                    SHVDN.MemDataMarshal.WriteFloat(address + 0x58, valueNormalized);
+                    SHVDN.MemDataMarshal.WriteFloat(address + 0x58, valueNormalized); // TODO: Find this offset dynamically
                     return;
                 }
                 else
@@ -413,7 +413,7 @@ namespace GTA
                     return 0;
                 }
 
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_463_1 ? 0x54 : 0x50;
+                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_463_1 ? 0x54 : 0x50; // TODO: Find this offset dynamically
                 return SHVDN.MemDataMarshal.ReadFloat(address + offset);
             }
             set
@@ -424,7 +424,7 @@ namespace GTA
                     return;
                 }
 
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_463_1 ? 0x54 : 0x50;
+                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_463_1 ? 0x54 : 0x50; // TODO: Find this offset dynamically
                 SHVDN.MemDataMarshal.WriteFloat(address + offset, value);
             }
         }

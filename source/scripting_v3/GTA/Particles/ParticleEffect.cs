@@ -1,5 +1,6 @@
 //
 // Copyright (C) 2015 crosire & kagikn & contributors
+// Copyright (C) 2025 Chiheb-Bacha
 // License: https://github.com/scripthookvdotnet/scripthookvdotnet#license
 //
 
@@ -75,7 +76,7 @@ namespace GTA
                     return Vector3.Zero;
                 }
 
-                return new Vector3(SHVDN.MemDataMarshal.ReadVector3(address + 144)); // 0x90. TODO: get it from SET_PARTICLE_FX_LOOPED_OFFSETS
+                return new Vector3(SHVDN.MemDataMarshal.ReadVector3(address + NativeMemory.PtfxOffsetOffset));
             }
             set
             {
@@ -91,7 +92,7 @@ namespace GTA
                     return;
                 }
 
-                SHVDN.MemDataMarshal.WriteVector3(address + 144, value.ToInternalFVector3());
+                SHVDN.MemDataMarshal.WriteVector3(address + NativeMemory.PtfxOffsetOffset, value.ToInternalFVector3());
             }
         }
 

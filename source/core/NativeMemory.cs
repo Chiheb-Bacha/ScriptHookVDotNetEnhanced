@@ -220,6 +220,23 @@ namespace SHVDN
 
             if (s_isEnhanced)
             {
+                address = MemScanner.FindPatternBmh("0f 28 99 ? ? ? ? 0f 58 99");
+                if (address != null)
+                {
+                    PtfxOffsetOffset = (int)*(byte*)(address + 3); // 0x90
+                }
+            }
+            else
+            {
+                address = MemScanner.FindPatternBmh("0f 29 47 ? 0f 28 89");
+                if (address != null)
+                {
+                    PtfxOffsetOffset = (int)*(byte*)(address + 7); // 0x90
+                }
+            }
+
+            if (s_isEnhanced)
+            {
                 address = MemScanner.FindPatternBmh("41 8b 4c 1c ? e8");
                 if (address != null)
                 {
@@ -2168,6 +2185,19 @@ namespace SHVDN
                 }
             }
 
+            if (s_isEnhanced)
+            {
+                address = MemScanner.FindPatternBmh("48 03 05 ? ? ? ? 4c 85 c0 0f 84 ? ? ? ? e9");
+            }
+            else
+            {
+                address = MemScanner.FindPatternBmh("48 03 15 ? ? ? ? 4C 23 C2 49 8B 08");
+            }
+            if (address != null)
+            {
+                s_yscScriptTableAddr = (*(int*)(address + 3) + address + 7);
+            }
+            
             // TODO: create a central patch manager which stores original and patch bytes.
 
             // These 2 patches are done by trainers such as Simple Trainer, Menyoo, and Enhanced Native Trainer, but we try to do this if they are not done yet
@@ -2353,85 +2383,42 @@ namespace SHVDN
 
             #region -- Enable All DLC Vehicles --
 
-                if (s_isEnhanced)
+            IntPtr addressInScript = IntPtr.Zero;
+            if (s_isEnhanced)
+            {
+                addressInScript = FindPatternInScript("2D ? ? ? ? 2C ? ? ? 56 ? ? 71 2E ? ? 62", 0x39DA738B); // joaat("shop_controller")
+            }
+            else
+            {
+                // Bumped the minimal version for this patch from 15 to 46, since SHVDN has an obviously wrong pattern and mask for it,
+                // and I have no access to shop_controller.ysc from a version <46.
+                if (gameVersion >= 46)
                 {
-                    address = MemScanner.FindPatternBmh("48 03 05 ? ? ? ? 4c 85 c0 0f 84 ? ? ? ? e9");
-                }
-                else
-                {
-                    // no need to patch the global variable in v1.0.573.1 or older builds
-                    if (gameVersion <= 15)
-                    {
-                        return;
-                    }
-                    address = MemScanner.FindPatternBmh("\x48\x03\x15\x00\x00\x00\x00\x4C\x23\xC2\x49\x8B\x08", "xxx????xxxxxx");
-                }
-
-                if (address == null)
-                {
-                    return;
-                }
-
-                var yscScriptTable = (YscScriptTable*)(*(int*)(address + 3) + address + 7);
-
-                // find the shop_controller script
-                YscScriptTableItem* shopControllerItem = yscScriptTable->FindScript(0x39DA738B);
-
-                if (shopControllerItem == null || !shopControllerItem->IsLoaded())
-                {
-                    return;
-                }
-
-                YscScriptHeader* shopControllerHeader = shopControllerItem->header;
-
-                string enableCarsGlobalPattern;
-                string enableCarsGlobalMask;
-                int enableCarsGlobalOffset;
-                if (s_isEnhanced)
-                {
-                    // Given that we look for this pattern in each codePage of the shop_controller script,
-                    // this pattern will be logged as not found multiple times in debug shvdne builds. Simply ignore that.
-                    enableCarsGlobalPattern = "\x2D\x00\x00\x00\x00\x2C\x00\x00\x00\x56\x00\x00\x71\x2E\x00\x00\x62";
-                    enableCarsGlobalMask = "x????x???x??xx??x";
-                    enableCarsGlobalOffset = 17;
-                }
-                else
-                {
+                    string enableCarsGlobalPattern;
                     if (gameVersion >= 80)
                     {
                         // b2802 has 3 additional opcodes between CALL opcode (0x5D) and GLOBAL_U24 opcode (0x61 in b2802)
-                        enableCarsGlobalPattern = "\x2D\x00\x00\x00\x00\x2C\x01\x00\x00\x56\x04\x00\x71\x2E\x00\x01\x62\x00\x00\x00\x00\x04\x00\x71\x2E\x00\x01";
-                    }
-                    else if (gameVersion >= 46)
-                    {
-                        enableCarsGlobalPattern = "\x2D\x00\x00\x00\x00\x2C\x01\x00\x00\x56\x04\x00\x6E\x2E\x00\x01\x5F\x00\x00\x00\x00\x04\x00\x6E\x2E\x00\x01";
+                        enableCarsGlobalPattern = "2D ? ? 00 00 2C 01 ? ? 56 04 00 71 2E ? 01 62 ? ? ? ? 04 00 71 2E ? 01";
                     }
                     else
                     {
-                        enableCarsGlobalPattern = "\x2D\x00\x00\x00\x00\x2C\x01\x00\x00\x56\x04\x00\x6E\x2E\x00\x01\x5F\x00\x00\x00\x00\x04\x00\x6E\x2E\x00\x01";
-                    }
-                    enableCarsGlobalMask = gameVersion >= 46 ? "x??xxxx??xxxxx?xx????xxxx?x" : "xx??xxxxxx?xx????xxxx?x";
-                    enableCarsGlobalOffset = gameVersion >= 46 ? 17 : 13;
-                }
-                int codepageCount = shopControllerHeader->CodePageCount();
-                for (int i = 0; i < codepageCount; i++)
-                {
-                    int size = shopControllerHeader->GetCodePageSize(i);
-                    if (size <= 0)
-                    {
-                        continue;
+                        enableCarsGlobalPattern = "2D ? ? 00 00 2C 01 ? ? 56 04 00 6E 2E ? 01 5F ? ? ? ? 04 00 6E 2E ? 01";
                     }
 
-                    address = MemScanner.FindPatternNaive(enableCarsGlobalPattern, enableCarsGlobalMask, shopControllerHeader->GetCodePageAddress(i), (ulong)size);
-                    if (address == null)
-                    {
-                        continue;
-                    }
-
-                    int globalIndex = *(int*)(address + enableCarsGlobalOffset) & 0xFFFFFF; // TODO: expose a getter and a setter for this global.
-                    *(int*)GetGlobalPtr(globalIndex).ToPointer() = 1;
-                    break;
+                    addressInScript = FindPatternInScript(enableCarsGlobalPattern, 0x39DA738B); // joaat("shop_controller")
                 }
+            }
+            if (addressInScript != IntPtr.Zero)
+            {
+                int enableCarsGlobalOffset = 17; // Same for Legacy and Enhanced
+                int globalIndex = GetScriptGlobalFromAddress(addressInScript, enableCarsGlobalOffset);
+                *(int*)GetGlobalPtr(globalIndex).ToPointer() = 1;
+            }
+            else
+            {
+                Log.Message(Log.Level.Error, "Pattern to enable MP cars in SP not found. Please inform SHVDNE maintainer on GitHub or 5mods." +
+                    "Make sure to include ScriptHookVDotNet.log, and ScriptHookV.log.");
+            }
             
             #endregion
         }
@@ -2632,6 +2619,8 @@ namespace SHVDN
             return entryText != null ? StringMarshal.PtrToStringUtf8(new IntPtr(entryText)) : string.Empty;
         }
 
+        // TODO: Add a function to allow modifying the text. This includes a public helper that returns the length of the existing text.
+
         #endregion
 
         #region -- YSC Script Data --
@@ -2695,7 +2684,7 @@ namespace SHVDN
             {
                 if (TablePtr == null)
                 {
-                    return null; //table initialisation hasn't happened yet
+                    return null; // table initialisation hasn't happened yet
                 }
                 for (int i = 0; i < count; i++)
                 {
@@ -2708,6 +2697,52 @@ namespace SHVDN
             }
         }
 
+        private static byte* s_yscScriptTableAddr;
+
+        public static IntPtr FindPatternInScript(string pattern, int scriptHash)
+        {
+            if (s_yscScriptTableAddr == null)
+            {
+                return IntPtr.Zero;
+            }
+            var yscScriptTable = (YscScriptTable*)s_yscScriptTableAddr;
+
+
+            YscScriptTableItem* shopControllerItem = yscScriptTable->FindScript(scriptHash);
+
+            if (shopControllerItem == null || !shopControllerItem->IsLoaded())
+            {
+                return IntPtr.Zero;
+            }
+
+            YscScriptHeader* shopControllerHeader = shopControllerItem->header;
+
+            int codepageCount = shopControllerHeader->CodePageCount();
+            byte* address;
+            for (int i = 0; i < codepageCount; i++)
+            {
+                int size = shopControllerHeader->GetCodePageSize(i);
+                if (size <= 0)
+                {
+                    continue;
+                }
+
+                address = MemScanner.FindPatternBmh(pattern, shopControllerHeader->GetCodePageAddress(i), (ulong)size);
+                if (address == null)
+                {
+                    continue;
+                }
+
+                return new IntPtr(address);
+            }
+
+            return IntPtr.Zero;
+        }
+
+        public static int GetScriptGlobalFromAddress(IntPtr address, int offset)
+        {
+            return *(int*)((byte*)address + offset) & 0xFFFFFF;
+        }
 
         #endregion
 
@@ -8191,6 +8226,7 @@ namespace SHVDN
         public static int PtfxColorOffset { get; }
         public static int PtfxRangeOffset { get; }
         public static int PtfxScaleOffset { get; }
+        public static int PtfxOffsetOffset { get; }
         // should be CGameScriptHandler::GetScriptEntity
         private static delegate* unmanaged[Stdcall]<int, ulong> s_getScriptEntity;
 

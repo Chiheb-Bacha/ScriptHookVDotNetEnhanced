@@ -2031,7 +2031,7 @@ namespace GTA
                     return false;
                 }
 
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_463_1 ? 400 : 396;
+                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_463_1 ? 400 : 396; // TODO: Find this offset dynamically
                 return SHVDN.MemDataMarshal.IsBitSet(address + offset, 0);
             }
             set
@@ -2042,7 +2042,7 @@ namespace GTA
                     return;
                 }
 
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_463_1 ? 400 : 396;
+                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_463_1 ? 400 : 396; // TODO: Find this offset dynamically
                 SHVDN.MemDataMarshal.SetBit(address + offset, 0, value);
             }
         }
@@ -2065,7 +2065,7 @@ namespace GTA
                     return 0;
                 }
 
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_463_1 ? 404 : 400;
+                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_463_1 ? 404 : 400; // TODO: Find this offset dynamically
                 return new RelationshipGroup(SHVDN.MemDataMarshal.ReadInt32(address + offset));
             }
             set
@@ -2076,7 +2076,7 @@ namespace GTA
                     return;
                 }
 
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_463_1 ? 404 : 400;
+                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_463_1 ? 404 : 400; // TODO: Find this offset dynamically
                 SHVDN.MemDataMarshal.WriteInt32(address + offset, value.Hash);
             }
         }

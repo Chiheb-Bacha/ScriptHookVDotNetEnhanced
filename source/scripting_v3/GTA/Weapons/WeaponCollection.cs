@@ -453,14 +453,14 @@ namespace GTA
                         return null;
                     }
 
-                    var weaponInventoryArray = (SHVDN.NativeMemory.RageAtArrayPtr*)(pedInventoryAddr + 0x18);
+                    var weaponInventoryArray = (SHVDN.NativeMemory.RageAtArrayPtr*)(pedInventoryAddr + 0x18); // TODO: Find this offset dynamically
                     if (index >= weaponInventoryArray->size)
                     {
                         return null;
                     }
 
                     ulong itemAddress = weaponInventoryArray->GetElementAddress(index);
-                    SHVDN.NativeMemory.ItemInfo* weaponInfo = *(SHVDN.NativeMemory.ItemInfo**)(itemAddress + 0x8);
+                    SHVDN.NativeMemory.ItemInfo* weaponInfo = *(SHVDN.NativeMemory.ItemInfo**)(itemAddress + 0x8); // TODO: Find this offset dynamically
                     if (weaponInfo == null)
                     {
                         return null;
