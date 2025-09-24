@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2015 crosire & kagikn & contributors
+ * Copyright (C) 2025 Chiheb-Bacha
  * License: https://github.com/scripthookvdotnet/scripthookvdotnet#license
  */
 
@@ -228,7 +229,7 @@ internal:
     static unsigned int scriptTimeoutThreshold = 5000;
     static bool shouldWarnOfScriptsBuiltAgainstDeprecatedApiWithTicker = true;
     static bool AutoLoadScripts = true;
-
+    static bool sPrevReloadComboState = false;
     // We use this domain to prevent from the keyboard thread reading stale values, and to protect against race
     // condition during reload. Do note that static variables are not shared between `AppDomain`s.
     static Object^ variablesLockForMainDomain = gcnew Object();
@@ -729,6 +730,9 @@ static bool AreAllKeysPressed(array<WinForms::Keys>^ keys)
     return true;
 }
 
+// Array to track previous key states for all possible 256 keys in O(1)
+static bool prevKeyState[256] = { false };
+
 static void ScriptHookVDotNet_ManagedKeyboardMessage(unsigned long keycode, bool keydown, bool ctrl, bool shift, bool alt)
 {
     // Filter out invalid key codes
@@ -757,17 +761,28 @@ static void ScriptHookVDotNet_ManagedKeyboardMessage(unsigned long keycode, bool
     if (alt)   keys = keys | WinForms::Keys::Alt;
 
     SHVDN::Console^ console = ScriptHookVDotNet::console;
+
+    // Update key states
+    bool prevState = prevKeyState[keycode];
+    prevKeyState[keycode] = keydown;
+
     if (console != nullptr)
     {
-        if (keydown && AreAllKeysPressed(ScriptHookVDotNet::reloadKeyBinding))
+        // Check if all keys in the reload combo are currently down
+        bool comboDown = AreAllKeysPressed(ScriptHookVDotNet::reloadKeyBinding);
+
+        // Detect key-up of the combo: previously pressed, now released
+        bool prevComboDown = ScriptHookVDotNet::sPrevReloadComboState;
+
+        if (prevComboDown && !comboDown)
         {
             // Force a reload
-            
-            // This causes the Game to Lag and freeze, until reloadKeyBinding is changed to "None" in the .ini and the old reloadKeyBinding is pressed again.
-            // TODO: Fix this.
-            // ScriptHookVDotNet::Reload();
-            return;
+            ScriptHookVDotNet::Reload();
         }
+
+        // Update the combo state to current
+        ScriptHookVDotNet::sPrevReloadComboState = comboDown;
+
         if (keydown && AreAllKeysPressed(ScriptHookVDotNet::consoleKeyBinding))
         {
             // Toggle open state
