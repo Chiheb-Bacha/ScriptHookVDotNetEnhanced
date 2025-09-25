@@ -1724,7 +1724,7 @@ namespace SHVDN
                         var findAttachPointFuncAddr = new IntPtr((long)address);
 
                         // 0x8f8
-                        address = MemScanner.FindPatternBmh("44 8b 89");
+                        address = MemScanner.FindPatternBmh("44 8b 89" , new IntPtr(address));
                         int attachPointsStructsCountOffset = *(int*)(address + 3);
 
                         // 0x604
@@ -2197,7 +2197,7 @@ namespace SHVDN
             {
                 s_yscScriptTableAddr = (*(int*)(address + 3) + address + 7);
             }
-            
+
             // TODO: create a central patch manager which stores original and patch bytes.
 
             // These 2 patches are done by trainers such as Simple Trainer, Menyoo, and Enhanced Native Trainer, but we try to do this if they are not done yet
@@ -8230,9 +8230,6 @@ namespace SHVDN
         // should be CGameScriptHandler::GetScriptEntity
         private static delegate* unmanaged[Stdcall]<int, ulong> s_getScriptEntity;
 
-
-
-
         public static IntPtr GetEntityAddress(int handle)
         {
             // In legacy, s_getScriptEntity contains the vfunc check (at 0x28).
@@ -9706,6 +9703,13 @@ namespace SHVDN
         }
 
         #endregion
+
+        #region -- Misc --
+
+        // TODO: This will contain stuff like disabling slowmo and so on.
+
+        #endregion
+
 
         #region -- Helper Functions for Enhanced --
 
