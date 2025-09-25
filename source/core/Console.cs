@@ -1,5 +1,6 @@
 //
 // Copyright (C) 2015 crosire & kagikn & contributors
+// Copyright (C) 2025 Chiheb-Bacha
 // License: https://github.com/scripthookvdotnet/scripthookvdotnet#license
 //
 
@@ -1446,7 +1447,9 @@ namespace SHVDN
         private static unsafe void DisableControlsThisFrame()
         {
             NativeFunc.Invoke(0x5F4B6931816E599B /* DISABLE_ALL_CONTROL_ACTIONS */, 0);
-
+            // Disable bringing up the pause menu if we type 'p' in the console.
+            NativeFunc.Invoke(0xFE99B66D079CF6BC /* DISABLE_CONTROL_ACTION */, 2, 199 /* INPUT_FRONTEND_PAUSE */, true);
+            
             // LookLeftRight .. LookRightOnly
             for (ulong i = 1; i <= 6; i++)
             {
