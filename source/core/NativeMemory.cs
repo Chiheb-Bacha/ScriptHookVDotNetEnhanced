@@ -63,6 +63,10 @@ namespace SHVDN
         /// <summary>
         /// Gets the game version enumeration value as specified by ScriptHookV.
         /// </summary>
+        /// <remarks>
+        /// Allthough this is deprecated, some olders scripts might still used it.
+        /// AB increased the returned value by 1000 for Enhanced so that it never clashes with Legacy.
+        /// </remarks>
         [DllImport("ScriptHookV.dll", ExactSpelling = true, EntryPoint = "?getGameVersion@@YA?AW4eGameVersion@@XZ")]
         public static extern int GetGameVersion();
 
@@ -1738,8 +1742,9 @@ namespace SHVDN
                         address = MemScanner.FindPatternBmh("49 6b fa", new IntPtr(address));
                         s_weaponAttachPointElementSize = *(byte*)(address + 3);
 
-                        // 0x68
-                        s_weaponAttachPointElementComponentCountOffset = *(byte*)(address + 8);
+                        // 0x60
+                        address = MemScanner.FindPatternBmh("41 b1 ? e8 ? ? ? ? 84 c0 0f 84 ? ? ? ? 41 8b 44 24");
+                        s_weaponAttachPointElementComponentCountOffset = *(byte*)(address + 20);
                     }
                 }
             }
@@ -2195,7 +2200,79 @@ namespace SHVDN
             }
             if (address != null)
             {
-                s_yscScriptTableAddr = (*(int*)(address + 3) + address + 7);
+                s_yscScriptTableAddr = *(int*)(address + 3) + address + 7;
+            }
+
+            if (s_isEnhanced)
+            {
+                address = MemScanner.FindPatternBmh("0f b6 3d ? ? ? ? 40 80 f7");
+
+                if (address != null)
+                {
+                    ulong funcLength = 87;
+                    byte* address1 = MemScanner.FindPatternBmh("c6 46 ? 01 48 89 f1", new IntPtr(address), funcLength);
+                    if (address1 != null) {
+                        s_fadeInEffectFuncAddr = (byte*)(*(int*)(address1 + 8) + address1 + 12);
+                        s_fadeInEffectOriginalFirstByte = new byte[] { *(byte*)s_fadeInEffectFuncAddr };
+                    }
+                    byte* address2 = MemScanner.FindPatternBmh("c6 46 ? 00 48 89 f1", new IntPtr(address), funcLength);
+                    if (address2 != null) {
+                        s_fadeOutEffectFuncAddr = (byte*)(*(int*)(address2 + 8) + address2 + 12);
+                        s_fadeOutEffectOriginalFirstByte = new byte[] { *(byte*)s_fadeOutEffectFuncAddr };
+                    }
+                    address = MemScanner.FindPatternBmh("48 83 c6", new IntPtr(address), funcLength);
+                    if (address != null)
+                    {
+                        s_selectionWheelTimescalePatchAddr = address - 4;
+                        byte* tmpAddr = s_selectionWheelTimescalePatchAddr;
+                        s_selectionWheelTimeScalePatchOriginalBytesEnhanced = new byte[] { *tmpAddr, *(tmpAddr + 1), *(tmpAddr + 2), *(tmpAddr + 3) };
+                    }
+                }
+            }
+            else
+            {
+                address = MemScanner.FindPatternBmh("33 c0 8b fa 48 8b d9 83 fa");
+
+                if (address != null)
+                {
+                    ulong funcLength = 79;
+                    byte* address1 = MemScanner.FindPatternBmh("88 51 ? e8", new IntPtr(address), funcLength);
+                    if (address1 != null)
+                    {
+                        s_fadeInEffectFuncAddr = (byte*)(*(int*)(address1 + 4) + address1 + 8);
+                        s_fadeInEffectOriginalFirstByte = new byte[] { *(byte*)s_fadeInEffectFuncAddr };
+                    }
+                    byte* address2 = MemScanner.FindPatternBmh("88 41 ? e8", new IntPtr(address), funcLength);
+                    if (address2 != null)
+                    {
+                        s_fadeOutEffectFuncAddr = (byte*)(*(int*)(address2 + 4) + address2 + 8);
+                        s_fadeOutEffectOriginalFirstByte = new byte[] { *(byte*)s_fadeOutEffectFuncAddr };
+                    }
+                    address = MemScanner.FindPatternBmh("48 8b 5c 24", new IntPtr(address), funcLength);
+                    if (address != null)
+                    {
+                        s_selectionWheelTimescalePatchAddr = address - 2;
+                        byte* tmpAddr = s_selectionWheelTimescalePatchAddr;
+                        s_selectionWheelTimeScalePatchOriginalBytesLegacy = new byte[] { *tmpAddr, *(tmpAddr + 1) };
+                    }
+                }
+            }
+
+            if (s_isEnhanced)
+            {
+                address = MemScanner.FindPatternBmh("41 b8 1a fd ad f1 44 0f 44 c0");
+                if (address != null)
+                {
+                    s_spWeaponWheelSoundHashAddr = address - 4;
+                }
+            }
+            else
+            {
+                address = MemScanner.FindPatternBmh("40 38 35 ? ? ? ? b8 1a fd ad f1");
+                if (address != null)
+                {
+                    s_spWeaponWheelSoundHashAddr = address + 14;
+                }
             }
 
             // TODO: create a central patch manager which stores original and patch bytes.
@@ -9706,7 +9783,65 @@ namespace SHVDN
 
         #region -- Misc --
 
-        // TODO: This will contain stuff like disabling slowmo and so on.
+        private static byte* s_fadeInEffectFuncAddr;
+        private static byte* s_fadeOutEffectFuncAddr;
+        private static byte[] s_fadeInEffectOriginalFirstByte = new byte[1]; // Using an array for consistency
+        private static byte[] s_fadeOutEffectOriginalFirstByte = new byte[1]; // Using an array for consistency
+        private static byte* s_selectionWheelTimescalePatchAddr;
+        private static byte[] s_selectionWheelTimeScalePatchOriginalBytesLegacy = new byte[2];
+        private static byte[] s_selectionWheelTimeScalePatchOriginalBytesEnhanced = new byte[4];
+        private static byte[] s_selectionWheelTimeScalePatchPatchBytesLegacy = { 0x31, 0xD2 };
+        private static byte[] s_selectionWheelTimeScalePatchPatchBytesEnhanced = { 0x31, 0xD2 , 0x90, 0x90 };
+        private static byte* s_spWeaponWheelSoundHashAddr;
+        private static byte[] s_spWeaponWheelSoundHash = { 0x07, 0x0C, 0x0D, 0xD2 }; // 0xd20d0c07 : joaat("WeaponWheel")
+        private static byte[] s_mpWeaponWheelSoundHash = { 0x1A, 0xFD, 0xAD, 0xF1 }; // 0xf1adfd1a : joaat("WeaponWheel_MP")
+
+        public static void InstallSelectionWheelsPatch()
+        {
+            if (s_isEnhanced)
+            {
+                copyBytesToAddr(s_selectionWheelTimescalePatchAddr, s_selectionWheelTimeScalePatchPatchBytesEnhanced);
+            }
+            else
+            {
+                copyBytesToAddr(s_selectionWheelTimescalePatchAddr, s_selectionWheelTimeScalePatchPatchBytesLegacy);
+            }
+            copyBytesToAddr(s_fadeInEffectFuncAddr, new byte[] { 0xC3 });
+            copyBytesToAddr(s_fadeOutEffectFuncAddr, new byte[] { 0xC3 });
+            copyBytesToAddr(s_spWeaponWheelSoundHashAddr, s_mpWeaponWheelSoundHash);
+        }
+
+        public static void UninstallSelectionWheelsPatch()
+        {
+            if (s_isEnhanced)
+            {
+                copyBytesToAddr(s_selectionWheelTimescalePatchAddr, s_selectionWheelTimeScalePatchOriginalBytesEnhanced);
+            }
+            else
+            {
+                copyBytesToAddr(s_selectionWheelTimescalePatchAddr, s_selectionWheelTimeScalePatchOriginalBytesLegacy);
+            }
+            copyBytesToAddr(s_fadeInEffectFuncAddr, s_fadeInEffectOriginalFirstByte);
+            copyBytesToAddr(s_fadeOutEffectFuncAddr, s_fadeOutEffectOriginalFirstByte);
+            copyBytesToAddr(s_spWeaponWheelSoundHashAddr, s_spWeaponWheelSoundHash);
+        }
+
+        public static bool IsSelectionWheelsPatched()
+        {
+            return (*(byte*)s_fadeInEffectFuncAddr == 0xC3) && (*(byte*)s_fadeOutEffectFuncAddr == 0xC3)
+                && (*(byte*)s_selectionWheelTimescalePatchAddr == s_selectionWheelTimeScalePatchPatchBytesLegacy[0])
+                && (*(byte*)(s_selectionWheelTimescalePatchAddr + 1) == s_selectionWheelTimeScalePatchPatchBytesLegacy[1])
+                && (*(uint*)s_spWeaponWheelSoundHashAddr == 0xf1adfd1a); // joaat("WeaponWheel_MP")
+        }
+
+        #endregion
+
+        #region -- Helper Functions for Patching --
+
+        static void copyBytesToAddr(byte* address, byte[] bytes)
+        {
+            Marshal.Copy(bytes, 0, new IntPtr(address), bytes.Length);
+        }
 
         #endregion
 

@@ -825,5 +825,40 @@ namespace GTA
         {
             return NativeMemory.GetScriptGlobalFromAddress(address, offset);
         }
+
+        /// <summary>
+        /// Sets whether the game should use the Mp or the Sp selection wheels.
+        /// </summary>
+        /// <param name="value">true/false if the Mp/Sp selection wheels should be used.</param>
+        /// <remarks>
+        /// Selection wheels are the weapon wheel, and the radio wheel.
+        /// The Mp selection wheels have different sounds, no slow-motion, and no vignetting effects.
+        /// </remarks>
+        public static void UseMpSelectionWheels(bool value)
+        {
+            if (value)
+            {
+                NativeMemory.InstallSelectionWheelsPatch();
+            }
+            else
+            {
+                NativeMemory.UninstallSelectionWheelsPatch();
+            }
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether the GTA:Online selection wheels are used.
+        /// </summary>
+        /// <returns>
+        /// <see langword="true"/> if the GTA:Online selection wheels are used; otherwise, <see langword="false"/>.
+        /// </returns>
+        /// <remarks>
+        /// Selection wheels are the weapon wheel, and the radio wheel.
+        /// The Mp selection wheels have different sounds, no slow-motion, and no vignetting effects.
+        /// </remarks>
+        public static bool IsUsingMpSelectionWheels()
+        {
+            return NativeMemory.IsSelectionWheelsPatched();
+        }
     }
 }
