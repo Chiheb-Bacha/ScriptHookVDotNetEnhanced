@@ -3,8 +3,9 @@
 // License: https://github.com/scripthookvdotnet/scripthookvdotnet#license
 //
 
-using GTA.Native;
 using System.Linq;
+using GTA.Native;
+using SHVDN;
 
 namespace GTA
 {
@@ -232,14 +233,47 @@ namespace GTA
         {
             set => Function.Call(Native.Hash.SET_PED_INFINITE_AMMO_CLIP, _owner.Handle, value);
         }
+        /// <summary>
+        /// Gets the <see cref="DamageType"/> of this <see cref="Weapon"/>.
+        /// </summary>
+        public DamageType DamageType => Function.Call<DamageType>(Native.Hash.GET_WEAPON_DAMAGE_TYPE, (uint)Hash);
 
         public bool CanUseOnParachute => Function.Call<bool>(Native.Hash.CAN_USE_WEAPON_ON_PARACHUTE, (uint)Hash);
+
+        /// <summary>
+        /// Gets whether this <see cref="Weapon"/> has a flashlight attachment and whether it is currently active.
+        /// </summary>
+        public bool IsFlashlightActive
+        {
+            get => Function.Call<bool>(Native.Hash.IS_FLASH_LIGHT_ON, _owner.Handle);
+        }
 
         public WeaponComponentCollection Components => _components ??= new WeaponComponentCollection(_owner, this);
 
         public static implicit operator WeaponHash(Weapon weapon)
         {
             return weapon.Hash;
+        }
+
+        /// <summary>
+        /// Gets the the stats displayed on the HUD for this <see cref="Weapon"/>.
+        /// </summary>
+        public WeaponHudStats HudStats
+        {
+            get
+            {
+                ScrWeaponHudStats stats;
+
+                unsafe
+                {
+                    if (!Function.Call<bool>(Native.Hash.GET_WEAPON_HUD_STATS, (uint)Hash, &stats))
+                    {
+                        return WeaponHudStats.Empty;
+                    }
+                }
+
+                return stats;
+            }
         }
 
         /// <summary>

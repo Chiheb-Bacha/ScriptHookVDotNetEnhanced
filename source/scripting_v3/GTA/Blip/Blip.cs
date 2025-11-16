@@ -3,10 +3,11 @@
 // License: https://github.com/scripthookvdotnet/scripthookvdotnet#license
 //
 
+using System;
+using System.ComponentModel;
+using System.Drawing;
 using GTA.Math;
 using GTA.Native;
-using System;
-using System.Drawing;
 
 namespace GTA
 {
@@ -502,11 +503,42 @@ namespace GTA
         }
 
         /// <summary>
+        /// Gets or sets a value indicating whether this <see cref="Blip"/> shows the tick indicator at the top left
+        /// corner of the <see cref="Blip"/>.
+        /// </summary>
+        /// <value>
+        /// <see langword="true"/> to show the tick indicator; otherwise, <see langword="false"/>.
+        /// </value>
+        public bool ShowsTick
+        {
+            get
+            {
+                IntPtr address = MemoryAddress;
+                if (address == IntPtr.Zero)
+                {
+                    return false;
+                }
+
+                const int PropertyFlagsOffset = 0x20; // TODO: Find this offset dynamically
+                // This bit is the greatest bit that isn't get shifted by adding the flag for the gold tick, which can
+                // be added by `SHOW_GOLD_TICK_ON_BLIP` since b2699.
+                return SHVDN.MemDataMarshal.IsBitSet(address + PropertyFlagsOffset, 15);
+            }
+            set => Function.Call(Hash.SHOW_TICK_ON_BLIP, Handle, value);
+        }
+
+        /// <summary>
         /// Gets or sets a value indicating whether this <see cref="Blip"/> shows the dollar sign at the top left corner of the <see cref="Blip"/>.
         /// </summary>
         /// <value>
         ///   <see langword="true" /> to show the dollar sign; otherwise, <see langword="false" />.
         /// </value>
+        [Obsolete(
+           "`Blip.ShowsDollarSign` is obsolete because the setter changes whether to show the tick, and also " +
+           "because `SHOW_FOR_SALE_ICON_ON_BLIP` was added in b2802, which reveals `ShowsDollarSign` is too " +
+           "different from internal flags for the blip \"for sale\" icon. For what the setter does, use " +
+           "`Blip.ShowsTick` instead."),
+           EditorBrowsable(EditorBrowsableState.Never)]
         public bool ShowsDollarSign
         {
             get
@@ -517,7 +549,12 @@ namespace GTA
                     return false;
                 }
 
-                return SHVDN.MemDataMarshal.IsBitSet(address + 0x20, 16);
+                int bitIndex = Game.FileVersion switch
+                {
+                    Version v when (SHVDN.NativeMemory.s_isEnhanced || v >= VersionConstsForGameVersion.v1_0_2699_0) => 17,
+                    _ => 16
+                };
+                return SHVDN.MemDataMarshal.IsBitSet(address + 0x20, bitIndex);
             }
             set => Function.Call(Hash.SHOW_TICK_ON_BLIP, Handle, value);
         }

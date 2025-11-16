@@ -1,5 +1,6 @@
 //
 // Copyright (C) 2015 crosire & kagikn & contributors
+// Copyright (C) 2025 Chiheb-Bacha
 // License: https://github.com/scripthookvdotnet/scripthookvdotnet#license
 //
 
@@ -381,6 +382,9 @@ namespace SHVDN
             CleanupStrings();
             // Need to free unmanaged resources in NativeMemory
             NativeMemory.DisposeUnmanagedResources();
+            // Need to remove all the hooks here, especially CallHooks, otherwise they won't be disabled,
+            // which causes the game to crash when unmanaged code calls the hooks inside this domain after it was unloaded.
+            Hooking.RemoveAllHooks();
         }
 
         /// <summary>
@@ -1386,6 +1390,7 @@ namespace SHVDN
             _rwLock.EnterWriteLock();
             try
             {
+                Hooking.RemoveAllScriptHooks(); // This is necessary, otherwise hooked functions could call functions inside aborted scripts.
                 foreach (Script script in _runningScripts)
                 {
                     script.Abort();
@@ -1417,6 +1422,7 @@ namespace SHVDN
             {
                 foreach (Script script in _runningScripts.Where(x => filename.Equals(x.Filename, StringComparison.OrdinalIgnoreCase)))
                 {
+                    Hooking.RemoveAllScriptHooksByScriptName(script.Name); // This is necessary, otherwise hooked functions could call functions inside aborted scripts.
                     script.Abort();
                 }
             }

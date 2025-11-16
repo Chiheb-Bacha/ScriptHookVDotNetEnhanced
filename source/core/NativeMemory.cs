@@ -18,6 +18,8 @@ using static SHVDN.NativeMemory;
 using SHVDN;
 using System.CodeDom;
 using System.Net;
+using System.Runtime.Remoting.Messaging;
+using System.Collections.Concurrent;
 
 namespace SHVDN
 {
@@ -109,7 +111,7 @@ namespace SHVDN
             // That means, conditions could apply to Enhanced when they shouldn't, given that its GameFileVersion is lower than that of Legacy.
             // For that reason, we bump the Major if Enhanced is running, instead of modifying hundreds of checks in the API.
             var version = new Version(FileVersionInfo.GetVersionInfo(Process.GetCurrentProcess().MainModule.FileName).FileVersion);
-            GameFileVersion =  s_isEnhanced ? new Version(version.Major + 1, version.Minor, version.Build, version.Revision) : version;
+            GameFileVersion = s_isEnhanced ? new Version(version.Major + 1, version.Minor, version.Build, version.Revision) : version;
 
             byte* address;
             IntPtr startAddressToSearch;
@@ -161,7 +163,7 @@ namespace SHVDN
                 }
             }
             else
-            { 
+            {
                 address = MemScanner.FindPatternBmh("\x74\x21\x48\x8B\x48\x20\x48\x85\xC9\x74\x18\x48\x8B\xD6\xE8", "xxxxxxxxxxxxxxx");
                 if (address != null)
                 {
@@ -406,7 +408,7 @@ namespace SHVDN
                     s_pedPoolAddress = (ulong*)(*(int*)(address + 3) + address + 7);
                 }
             }
-            
+
             if (s_isEnhanced)
             {
                 address = MemScanner.FindPatternBmh("53 48 81 ec ? ? ? ? 0f 29 b4 ? ? ? ? ? 48 89 ce 0f b6 05");
@@ -481,7 +483,7 @@ namespace SHVDN
                     s_fwScriptGuidPoolAddress = (ulong*)(*(int*)(address + 3) + address + 7);
                 }
             }
-            
+
             address = s_isEnhanced ? MemScanner.FindPatternBmh("48 8b 05 ? ? ? ? 48 85 c0 74 ? 4c 8b 00") : MemScanner.FindPatternBmh("\x48\x8B\x05\x00\x00\x00\x00\xF3\x0F\x59\xF6\x48\x8B\x08", "xxx????xxxxxxx");
             if (address != null)
             {
@@ -971,7 +973,7 @@ namespace SHVDN
                     s_getEventTypeIndexVFuncOffset = (uint)*(byte*)(address + 12);
                 }
             }
-            
+
             if (s_isEnhanced)
             {
                 address = MemScanner.FindPatternBmh("48 8d 0d ? ? ? ? 48 89 0e 89 46 ? 89 56 ? 4c 89 46");
@@ -984,7 +986,6 @@ namespace SHVDN
             {
                 ulong cEventSwitch2NmVfTableArrayAddr = (ulong)(*(int*)(address + 3) + address + 7);
                 ulong getEventTypeOfcEventSwitch2NmFuncAddr = *(ulong*)(cEventSwitch2NmVfTableArrayAddr + s_getEventTypeIndexVFuncOffset);
-                // TODO: check if this is still the case for Enhanced.
                 s_cEventSwitch2NmTypeIndex = *(int*)(getEventTypeOfcEventSwitch2NmFuncAddr + 1);
             }
 
@@ -1053,7 +1054,7 @@ namespace SHVDN
             else
             {
                 // We have to find GetLabelTextByHashFunc indirectly since Rampage Trainer hooks the function that returns the string address for corresponding text label hash by inserting jmp instruction at the beginning if that trainer is installed.
-                address = MemScanner.FindPatternBmh("\x74\x64\x48\x8D\x15\x00\x00\x00\x00\x48\x8D\x0D\x00\x00\x00\x00\xE8\x00\x00\x00\x00\x84\xC0\x74\x33", "xxxxx????xxx????x????xxxx");
+                address = MemScanner.FindPatternBmh("74 64 48 8D 15 ? ? ? ? 48 8D 0D ? ? ? ? E8 ? ? ? ? 84 C0 74 33");
                 if (address != null)
                 {
                     byte* doesTextLabelExistFuncAddr = (byte*)(*(int*)(address + 17) + address + 21);
@@ -1151,7 +1152,7 @@ namespace SHVDN
                     s_northRadarBlipHandleAddress = (int*)(*(int*)(address + 10) + address + 14);
                 }
             }
-            
+
 
             if (s_isEnhanced)
             {
@@ -1254,7 +1255,7 @@ namespace SHVDN
                     s_isDecoratorLocked = (byte*)(*(int*)(address + 2) + address + 7);
                 }
             }
-            
+
 
             if (s_isEnhanced)
             {
@@ -1515,7 +1516,7 @@ namespace SHVDN
                             s_cameraPoolAddress = (ulong*)rsi;
                         }
                     }
-                    
+
                 }
             }
             else
@@ -1526,7 +1527,7 @@ namespace SHVDN
                     s_cameraPoolAddress = (ulong*)(*(int*)(address - 9) + address - 5);
                 }
             }
-            
+
             if (s_isEnhanced)
             {
                 address = MemScanner.FindPatternBmh("88 05 ? ? ? ? e8 ? ? ? ? 88 05 ? ? ? ? e8");
@@ -1728,7 +1729,7 @@ namespace SHVDN
                         var findAttachPointFuncAddr = new IntPtr((long)address);
 
                         // 0x8f8
-                        address = MemScanner.FindPatternBmh("44 8b 89" , new IntPtr(address));
+                        address = MemScanner.FindPatternBmh("44 8b 89", new IntPtr(address));
                         int attachPointsStructsCountOffset = *(int*)(address + 3);
 
                         // 0x604
@@ -1822,7 +1823,7 @@ namespace SHVDN
                 if (address != null)
                 {
                     int pedIntelligenceOffset = *(int*)(address + 18);
-                    PedPlayerInfoOffset = pedIntelligenceOffset + 0x8; // TODO: verify this.
+                    PedPlayerInfoOffset = pedIntelligenceOffset + 0x8;
                 }
             }
             else
@@ -1923,10 +1924,9 @@ namespace SHVDN
             }
             if (address != null)
             {
-                int isWantedStarFlashingOffset = *(int*)(address + (s_isEnhanced? 3 : 2));
+                int isWantedStarFlashingOffset = *(int*)(address + (s_isEnhanced ? 3 : 2));
                 // Flags for ignoring player are actually read/written as a byte in the game code, but make this value 4-byte aligned because SetBit and IsBitSet reads/writes as an int value
 
-                // TODO: Test these for Enhanced.
                 CWantedIgnorePlayerFlagOffset = isWantedStarFlashingOffset - 3;
 
                 CWantedTimeSearchLastRefocusedOffset = isWantedStarFlashingOffset - 0x23;
@@ -1966,7 +1966,7 @@ namespace SHVDN
                 }
             }
             else
-            {   
+            {
                 // Two special ability slots are available in b2060 and later versions
                 if (gameVersion >= 59)
                 {
@@ -2066,7 +2066,7 @@ namespace SHVDN
             if (address != null)
             {
                 s_getAsCProjectileRocketConstVFuncOffset = *(int*)(address - 7);
-                // Test these for Enhanced.
+
                 s_getAsCProjectileConstVFuncOffset = s_getAsCProjectileRocketConstVFuncOffset - 0x10;
                 s_getAsCProjectileThrownConstVFuncOffset = s_getAsCProjectileRocketConstVFuncOffset + 0x10;
             }
@@ -2083,7 +2083,7 @@ namespace SHVDN
             if (address != null)
             {
                 ProjectileRocketTargetOffset = *(int*)(address + 5);
-                // Test these for Enhanced.
+
                 ProjectileRocketCachedTargetPosOffset = ProjectileRocketTargetOffset - 0x20;
                 ProjectileRocketLaunchDirOffset = ProjectileRocketTargetOffset - 0x10;
                 ProjectileRocketFlightModelInputPitchOffset = ProjectileRocketTargetOffset + 0x8;
@@ -2275,7 +2275,121 @@ namespace SHVDN
                 }
             }
 
-            // TODO: create a central patch manager which stores original and patch bytes.
+            if (s_isEnhanced)
+            {
+                address = MemScanner.FindPatternBmh("85 d2 74 ? 44 0f b7 05 ? ? ? ? 4d 85 c0");
+                if (address != null)
+                {
+                    s_AIHandlingInfoCount = *(ushort*)(*(int*)(address + 8) + address + 12);
+                    s_AIHandlingInfoBase = *(ulong*)(*(int*)(address + 20) + address + 24);
+                    address = MemScanner.FindPatternBmh("48 8b 80", new IntPtr(address));
+                    if (address != null)
+                    {
+                        s_AIHandlingInfoInHandlingInfoOffset = *(int*)(address + 3); // 0x150
+                    }
+                }
+                address = MemScanner.FindPatternBmh("f3 0f 5f f9 0f b7 43 ? f3 0f 10 05");
+                if (address != null)
+                {
+                    s_CAICurvePointCountInCAIHandlingInfoOffset = *(byte*)(address + 7);
+                }
+                address = MemScanner.FindPatternBmh("48 8b 53 ? 48 8b 0a f3 0f 10 59", new IntPtr(address));
+                if (address != null)
+                {
+                    s_CAICurvePointBaseInCAIHandlingInfoOffset = *(byte*)(address + 3);
+                }
+            }
+            else
+            {
+                address = MemScanner.FindPatternBmh("85 d2 74 ? 8b ca e9");
+                if (address != null)
+                {
+                    // It would be more convenient to just use the function below, but it was inlined in Enhanced
+                    // So for consistency, I Also get the count and the base and implement the lookup myself.
+                    byte* getAIHandlingByHashFuncAddr = *(int*)(address + 7) + address + 11;
+                    s_AIHandlingInfoCount = *(ushort*)(*(int*)(getAIHandlingByHashFuncAddr + 3) + getAIHandlingByHashFuncAddr + 7);
+                    s_AIHandlingInfoBase = *(ulong*)(*(int*)(getAIHandlingByHashFuncAddr + 22) + getAIHandlingByHashFuncAddr + 26);
+                    address = MemScanner.FindPatternBmh("48 8b 80", new IntPtr(address));
+                    if (address != null)
+                    {
+                        s_AIHandlingInfoInHandlingInfoOffset = *(int*)(address + 3); // 0x150
+                    }
+                }
+                address = MemScanner.FindPatternBmh("0f b7 41 ? 44 8b c0 f3 0f 10");
+                if (address != null)
+                {
+                    s_CAICurvePointCountInCAIHandlingInfoOffset = *(byte*)(address + 3);
+                    s_CAICurvePointBaseInCAIHandlingInfoOffset = *(byte*)(address + 22);
+                }
+            }
+
+            if (s_isEnhanced)
+            {
+                address = MemScanner.FindPatternBmh("8b 05 ? ? ? ? 8d 50 ? 83 fa ? ba");
+            }
+            else
+            {
+                address = MemScanner.FindPatternBmh("8b 15 ? ? ? ? 41 83 c8");
+            }
+            if (address != null)
+            {
+                s_currentLanguageAddr = *(int*)(address + 2) + address + 6;
+            }
+
+            if (s_isEnhanced)
+            {
+                address = MemScanner.FindPatternBmh("0F 54 C2 0F 56 C4 F3 0F 58 C3");
+                if (address != null)
+                {
+                    s_setSpecialFlightCurrentRatioPatchAddr = address + 10;
+                }
+            }
+            else
+            {
+                address = MemScanner.FindPatternBmh("45 0f 57 d2 41 0f 2f f2 77");
+                if (address != null)
+                {
+                    s_setSpecialFlightCurrentRatioPatchAddr = address - 8;
+                }
+            }
+            if (s_setSpecialFlightCurrentRatioPatchAddr != null)
+            {
+                byte[] origBytes = new byte[8];
+                for (int i = 0; i < origBytes.Length; i++)
+                {
+                    origBytes[i] = *(byte*)(s_setSpecialFlightCurrentRatioPatchAddr + i);
+                }
+                s_setSpecialFlightCurrentRatioOriginalBytes = origBytes;
+                for (int i = 0; i < origBytes.Length; i++)
+                {
+                    s_setSpecialFlightCurrentRatioNopBytes[i] = 0x90;
+                }
+            }
+
+            if (s_isEnhanced)
+            {
+                address = MemScanner.FindPatternBmh("f3 0f 10 0d ? ? ? ? 4c 89 f1 e8 ? ? ? ? 41 80 be");
+                if (address != null)
+                {
+                    s_engineTorqueMultiplierPatchAddr = address - 11;
+                }
+            }
+            else
+            {
+                address = MemScanner.FindPatternBmh("89 83 ? ? ? ? 48 8b cb f3 0f 10 0d");
+                if (address != null)
+                {
+                    s_engineTorqueMultiplierPatchAddr = address - 10;
+                }
+            }
+            if (s_engineTorqueMultiplierPatchAddr != null)
+            {
+                s_engineTorqueMultiplierPatchNopBytes = new byte[s_isEnhanced ? 11 : 10];
+                for (int i = 0; i < s_engineTorqueMultiplierPatchNopBytes.Length; i++)
+                {
+                    s_engineTorqueMultiplierPatchNopBytes[i] = 0x90;
+                }
+            }
 
             // These 2 patches are done by trainers such as Simple Trainer, Menyoo, and Enhanced Native Trainer, but we try to do this if they are not done yet
             #region -- Bypass model requests block for some models --
@@ -2350,7 +2464,7 @@ namespace SHVDN
             var weaponObjectHashes = new List<int>();
             var pedHashes = new List<int>();
 
-            
+
             HashSet<uint> excludePeds;
             excludePeds = new HashSet<uint>
             {
@@ -2364,7 +2478,8 @@ namespace SHVDN
 
             HashSet<uint> stubVehicles;
             if (s_isEnhanced)
-            { 
+            {
+                // there are no stub vehicles in Enhanced, but we create an empty Set just for consistency, and so that we don't have to change the implementation.
                 stubVehicles = new HashSet<uint>();
             }
             else
@@ -2378,7 +2493,7 @@ namespace SHVDN
                 0x438F6593, /* s95 */
                 };
             }
- 
+
 
             if (vehicleClassOffset != 0)
             {
@@ -2467,9 +2582,7 @@ namespace SHVDN
             }
             else
             {
-                // Bumped the minimal version for this patch from 15 to 46, since SHVDN has an obviously wrong pattern and mask for it,
-                // and I have no access to shop_controller.ysc from a version <46.
-                if (gameVersion >= 46)
+                if (gameVersion >= 16)
                 {
                     string enableCarsGlobalPattern;
                     if (gameVersion >= 80)
@@ -2477,9 +2590,13 @@ namespace SHVDN
                         // b2802 has 3 additional opcodes between CALL opcode (0x5D) and GLOBAL_U24 opcode (0x61 in b2802)
                         enableCarsGlobalPattern = "2D ? ? 00 00 2C 01 ? ? 56 04 00 71 2E ? 01 62 ? ? ? ? 04 00 71 2E ? 01";
                     }
-                    else
+                    else if (gameVersion >= 46)
                     {
                         enableCarsGlobalPattern = "2D ? ? 00 00 2C 01 ? ? 56 04 00 6E 2E ? 01 5F ? ? ? ? 04 00 6E 2E ? 01";
+                    }
+                    else
+                    {
+                        enableCarsGlobalPattern = "2C 01 ? ? 20 56 04 00 6E 2E ? 01 5F ? ? ? ? 04 00 6E 2E ? 01";
                     }
 
                     addressInScript = FindPatternInScript(enableCarsGlobalPattern, 0x39DA738B); // joaat("shop_controller")
@@ -2487,7 +2604,7 @@ namespace SHVDN
             }
             if (addressInScript != IntPtr.Zero)
             {
-                int enableCarsGlobalOffset = 17; // Same for Legacy and Enhanced
+                int enableCarsGlobalOffset = (s_isEnhanced || gameVersion >= 46) ? 17 : 13; // Same for Legacy and Enhanced
                 int globalIndex = GetScriptGlobalFromAddress(addressInScript, enableCarsGlobalOffset);
                 *(int*)GetGlobalPtr(globalIndex).ToPointer() = 1;
             }
@@ -2496,8 +2613,50 @@ namespace SHVDN
                 Log.Message(Log.Level.Error, "Pattern to enable MP cars in SP not found. Please inform SHVDNE maintainer on GitHub or 5mods." +
                     "Make sure to include ScriptHookVDotNet.log, and ScriptHookV.log.");
             }
-            
+
             #endregion
+
+            #region -- Hooking --
+            if (s_isEnhanced)
+            {
+                address = MemScanner.FindPatternBmh("48 83 EC ? E8 ? ? ? ? 48 85 C0 75");
+            }
+            else
+            {
+                address = MemScanner.FindPatternBmh("48 85 C0 75 34 8B 0D");
+            }
+            if (address != null)
+            {
+                s_getGxtEntryFuncCall = new IntPtr(address + (s_isEnhanced ? 4 : -5));
+                if (s_isEnhanced)
+                {
+                    s_origGetGxtEntryFuncAddr = new IntPtr(*(int*)(address + 5) + address + 9);
+                }
+                else
+                {
+                    s_origGetGxtEntryFuncAddr = new IntPtr(*(int*)(address - 4) + address);
+                }
+            }
+
+            if (s_isEnhanced)
+            {
+                address = MemScanner.FindPatternBmh("8b 05 ? ? ? ? ff c8 3b 05 ? ? ? ? 75 ? 48 89 f1 e8");
+            } else
+            {
+                address = MemScanner.FindPatternBmh("8b 05 ? ? ? ? ff c8 39 05 ? ? ? ? 75 ? 48 8b cb e8");
+            }
+            if (address != null)
+            {
+                s_updateSpecialFlightModeVehicleBonesCall = new IntPtr(address + 19);
+            }
+
+            // Hooking should always be done at the end, so that the init of NativeMemory can find all patterns, which could be changed through MH Hooks,
+            // and correctly resolve all function addresses before the rel32 values are changed through CH Hooks.
+
+            InitGxtEntryMinHook();
+            InitUpdateSpecialFlightModeVehicleBonesCallHook();
+            #endregion
+
         }
 
         public static bool s_isEnhanced { get; private set;}
@@ -2696,7 +2855,24 @@ namespace SHVDN
             return entryText != null ? StringMarshal.PtrToStringUtf8(new IntPtr(entryText)) : string.Empty;
         }
 
-        // TODO: Add a function to allow modifying the text. This includes a public helper that returns the length of the existing text.
+        public static bool SetGxtEntryByHash(int entryLabelHash, string newLabel)
+        {
+            char* entryText = (char*)s_getLabelTextByHashFunc(s_getLabelTextByHashAddress, entryLabelHash);
+            if (entryText == null) return false;
+
+            byte* entryBytes = (byte*)entryText;
+            int strLength = 0;
+            while (entryBytes[strLength] != 0) strLength++; // null-terminated
+
+            byte[] utf8Bytes = Encoding.UTF8.GetBytes(newLabel);
+
+            // Truncate if too long or pad with spaces
+            for (int i = 0; i < strLength; i++)
+            {
+                entryBytes[i] = i < utf8Bytes.Length ? utf8Bytes[i] : (byte)' ';
+            }
+            return true;
+        }
 
         #endregion
 
@@ -2804,7 +2980,8 @@ namespace SHVDN
                     continue;
                 }
 
-                address = MemScanner.FindPatternBmh(pattern, shopControllerHeader->GetCodePageAddress(i), (ulong)size);
+                bool isScriptPattern = true;
+                address = MemScanner.FindPatternBmh(pattern, shopControllerHeader->GetCodePageAddress(i), (ulong)size, isScriptPattern);
                 if (address == null)
                 {
                     continue;
@@ -2812,6 +2989,8 @@ namespace SHVDN
 
                 return new IntPtr(address);
             }
+
+            Log.Message(Log.Level.Warning, $"NativeMemory.FindPatternInScript could not find pattern: {pattern}. Please inform SHVDNE maintainer.");
 
             return IntPtr.Zero;
         }
@@ -3456,6 +3635,8 @@ namespace SHVDN
 
             public static int FirstVehicleFlagsOffset { get; }
 
+            public static int EngineTorqueMultiplierOffset { get; }
+
             static Vehicle()
             {
                 byte* address;
@@ -3559,7 +3740,6 @@ namespace SHVDN
                     if (address != null)
                     {
                         WheelCountOffset = *(int*)(address - 9); // 0xc38
-                        // TODO: Test these.
                         WheelPtrArrayOffset = WheelCountOffset - 8;
                         WheelBoneIdToPtrArrayIndexOffset = WheelCountOffset + 4;
                     }
@@ -3603,7 +3783,6 @@ namespace SHVDN
                 if (address != null)
                 {
                     CurrentRpmOffset = *(int*)(address + (s_isEnhanced ? 5 : 10)); // 0x8c8
-                    // TODO: Test these for Enhanced.
                     ClutchOffset = CurrentRpmOffset + 0xC;
                     AccelerationOffset = CurrentRpmOffset + 0x10;
                 }
@@ -3620,7 +3799,6 @@ namespace SHVDN
                 if (address != null)
                 {
                     SteeringScaleOffset = *(int*)(address + (s_isEnhanced ? 7 : 6));
-                    // TODO: Test these for Enhanced.
                     SteeringAngleOffset = SteeringScaleOffset + 8;
                     ThrottlePowerOffset = SteeringScaleOffset + 0x10;
                     BrakePowerOffset = SteeringScaleOffset + 0x14;
@@ -3726,7 +3904,6 @@ namespace SHVDN
                     if (address != null)
                     {
                         IsInteriorLightOnOffset = *(int*)(address + 2);
-                        // TODO: Test this for Enhnaced.
                         IsEngineStartingOffset = IsInteriorLightOnOffset + 1;
                     }
                 }
@@ -3810,7 +3987,6 @@ namespace SHVDN
                     if (address != null)
                     {
                         PreviouslyOwnedByPlayerOffset = *(int*)(address + 6); // 0x974
-                        // TODO: Test this for Enhanced.
                         NeedsToBeHotwiredOffset = PreviouslyOwnedByPlayerOffset;
                     }
                 }
@@ -3990,7 +4166,6 @@ namespace SHVDN
                         address = MemScanner.FindPatternBmh("0f b7 81", new IntPtr(unkHandlingFuncAddr));
                         if (address != null)
                         {
-                            // TODO: Test that the -8 is correct for Enhnaced.
                             SubHandlingDataArrayOffset = (*(int*)(address + 3) - 8);
                         }
                     }
@@ -4027,7 +4202,6 @@ namespace SHVDN
                     if (address != null)
                     {
                         CWheelFrontRearSelectorOffset = *(int*)(address + 9);
-                        // TODO: Test this for Enhanced.
                         CWheelStaticForceOffset = CWheelFrontRearSelectorOffset - 4;
                     }
                 }
@@ -4065,7 +4239,6 @@ namespace SHVDN
                     if (address != null)
                     {
                         CWheelTireHealthOffset = *(int*)(address + 4);
-                        // TODO: Test this for Enhanced
                         CWheelSuspensionHealthOffset = CWheelTireHealthOffset - 4;
                     }
                 }
@@ -4217,7 +4390,7 @@ namespace SHVDN
                         SpecialFlightTargetRatioOffset = *(int*)(address + 20); // 0x348
                         // SET_HOVER_MODE_WING_RATIO stores the ratio in both 0x34c and 0x35c in both Legacy and Enhanced
                         SpecialFlightWingRatioOffset = SpecialFlightTargetRatioOffset + 0x4; // 0x34c
-                        SpecialFlightAreWingsDisabledOffset = SpecialFlightTargetRatioOffset + 0x1C;
+                        SpecialFlightAreWingsDisabledOffset = SpecialFlightTargetRatioOffset + 0x1C; // 0x368
                         SpecialFlightCurrentRatioOffset = SpecialFlightTargetRatioOffset + 0x28; // 0x370
                     }
                 }
@@ -4230,12 +4403,64 @@ namespace SHVDN
                         {
                             SpecialFlightTargetRatioOffset = *(int*)(address + 0x1C); // 0x348
                             SpecialFlightWingRatioOffset = SpecialFlightTargetRatioOffset + 0x4; // 0x34c
-                            SpecialFlightAreWingsDisabledOffset = SpecialFlightTargetRatioOffset + 0x1C;
+                            SpecialFlightAreWingsDisabledOffset = SpecialFlightTargetRatioOffset + 0x1C; // 0x368
                             SpecialFlightCurrentRatioOffset = SpecialFlightTargetRatioOffset + 0x28; // 0x370
                         }
                     }
                 }
                 // The values for special flight mode (e.g. Deluxo) are present only in b1290 or later versions
+
+                if (s_isEnhanced)
+                {
+                    address = MemScanner.FindPatternBmh("f3 41 0f 10 b6 ? ? ? ? f3 0f 59 74 24");
+                    if (address != null)
+                    {
+                        EngineTorqueMultiplierOffset = *(int*)(address + 5); // 0x13a0
+                    }
+                } else
+                {
+                    address = MemScanner.FindPatternBmh("f3 0f 59 b6 ? ? ? ? 48 8b ce e8");
+                    if (address != null)
+                    {
+                        EngineTorqueMultiplierOffset = *(int*)(address + 4); // 0x13a0
+                    }
+                }
+                
+            }
+
+            // TODO: This will be used in future updates to add subhandlings to vehicles, or update their existing ones.
+            // Has to be handled with a lot of caution, as adding some subhandling types to some vehicle types crashes the game.
+            public static bool UpdateSubHandlingData(IntPtr handlingDataAddr, IntPtr newSubHandlingDataAddr, int handlingType)
+            {
+                var subHandlingArray = (RageAtArrayPtr*)(handlingDataAddr + SubHandlingDataArrayOffset);
+                ushort subHandlingCapacity = subHandlingArray->capacity;
+                if (subHandlingCapacity <= 0)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < subHandlingCapacity; i++)
+                {
+                    ulong subHandlingDataAddr = subHandlingArray->GetElementAddress(i);
+                    if (subHandlingDataAddr != 0)
+                    {
+                        ulong vFuncAddr = *(ulong*)(*(ulong*)subHandlingDataAddr + (uint)0x10);
+                        var getSubHandlingDataVFunc = (delegate* unmanaged[Stdcall]<ulong, int>)(vFuncAddr);
+                        int handlingTypeOfCurrentElement = getSubHandlingDataVFunc(subHandlingDataAddr);
+                        if (handlingTypeOfCurrentElement == handlingType)
+                        {
+                            subHandlingArray->SetElementAddress(i, (ulong)newSubHandlingDataAddr);
+                            return true;
+                        }
+                    }
+                    else
+                    {
+                        subHandlingArray->SetElementAddress(i, (ulong)newSubHandlingDataAddr);
+                        return true;
+                    }
+                }
+
+                return false;
             }
 
             public static IntPtr GetSubHandlingData(IntPtr handlingDataAddr, int handlingType)
@@ -5482,7 +5707,7 @@ namespace SHVDN
         {
             if (entityAddress != IntPtr.Zero)
             {
-                return new IntPtr(*(long*)((ulong)entityAddress.ToInt64() + 0x20));
+                return new IntPtr(*(long*)((ulong)entityAddress.ToInt64() + 0x20)); // TODO: get this offset dynamically
             }
 
             return IntPtr.Zero;
@@ -5492,7 +5717,7 @@ namespace SHVDN
         {
             if (fwArcheTypeAddress != IntPtr.Zero)
             {
-                return (*(int*)((ulong)fwArcheTypeAddress.ToInt64() + 0x18));
+                return (*(int*)((ulong)fwArcheTypeAddress.ToInt64() + 0x18)); // TODO: get this offset dynamically
             }
 
             return 0;
@@ -5518,7 +5743,7 @@ namespace SHVDN
             if (fwArcheTypeAddress != IntPtr.Zero)
             {
                 // The game can't draw fragment entities properly if this value is not 1
-                return (*(byte*)((ulong)fwArcheTypeAddress.ToInt64() + 0x60) == 1);
+                return (*(byte*)((ulong)fwArcheTypeAddress.ToInt64() + 0x60) == 1); // TODO: get this offset dynamically
             }
 
             return false;
@@ -6089,7 +6314,6 @@ namespace SHVDN
 
         // if the entity is a ped and they are in a vehicle, the vehicle position will be returned instead (just like GET_ENTITY_COORDS does)
         private static delegate* unmanaged[Stdcall]<ulong, float*, ulong> s_entityPosFunc;
-        // should be rage::fwScriptGuid::CreateGuid
         private static delegate* unmanaged[Stdcall]<ulong, int> s_createGuid;
 
         internal sealed class FwScriptGuidPoolTask : IScriptTask
@@ -6262,7 +6486,6 @@ namespace SHVDN
                 return resultList.ToArray();
             }
 
-            // TODO: Check this.
             private int[] GetGuidHandlesFromProjectilePool(void* fwScriptGuidPool,
                 ulong* projectilePool, int itemCount, int maxItemCount, Func<IntPtr, bool> predicate)
             {
@@ -7236,6 +7459,7 @@ namespace SHVDN
                 return *(CPathRegion**)(s_cPathFindInstanceAddress + StartPathNodeOffsetOfCPathFind + areaId * 0x8);
             }
 
+            [Flags]
             public enum VehiclePathNodeProperties
             {
                 None = 0,
@@ -8304,7 +8528,7 @@ namespace SHVDN
         public static int PtfxRangeOffset { get; }
         public static int PtfxScaleOffset { get; }
         public static int PtfxOffsetOffset { get; }
-        // should be CGameScriptHandler::GetScriptEntity
+
         private static delegate* unmanaged[Stdcall]<int, ulong> s_getScriptEntity;
 
         public static IntPtr GetEntityAddress(int handle)
@@ -8364,7 +8588,6 @@ namespace SHVDN
             }
             catch (Exception)
             {
-                //TODO: Add a reasonable Exception Class to throw in this case.
                 return false;
             }
         }
@@ -8714,6 +8937,12 @@ namespace SHVDN
             public ulong GetElementAddress(int i)
             {
                 return data[i];
+            }
+            // To be used with caution, only after careful reverse engineering and testing.
+            // Currently only used for UpdateSubHandlingData.
+            public void SetElementAddress(int i, ulong address)
+            {
+                data[i] = address;
             }
         }
 
@@ -9674,7 +9903,7 @@ namespace SHVDN
             return false;
         }
 
-        private static bool IsPedInjured(byte* pedAddress) => *(float*)(pedAddress + 0x280) < *(float*)(pedAddress + Ped.InjuryHealthThresholdOffset);
+        private static bool IsPedInjured(byte* pedAddress) => *(float*)(pedAddress + 0x280) < *(float*)(pedAddress + Ped.InjuryHealthThresholdOffset); // TODO: find this offset dynamically
 
         private static void SetNmParameters(ulong messageMemory, Dictionary<string, (int value, Type type)> boolIntFloatParameters, Dictionary<string, object> stringVector3ArrayParameters)
         {
@@ -9884,9 +10113,9 @@ namespace SHVDN
                 int result = s_isEntityUsableVFunc(entity, s_entityPosVFuncSecondArgument);
                 return result != 0;
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                // TODO: Add a reasonable Exception Class to throw in this case.
+                Log.Message(Log.Level.Warning, $"IsEntityUsable failed. An Exception was thrown: {e}");
                 return false;
             }
         }
@@ -9960,6 +10189,303 @@ namespace SHVDN
             count &= 63;
             return (value << count) | (value >> (64 - count));
         }
+
+        public static ushort s_AIHandlingInfoCount;
+        public static ulong s_AIHandlingInfoBase;
+        public static int s_AIHandlingInfoInHandlingInfoOffset;
+        public static int s_CAICurvePointCountInCAIHandlingInfoOffset;
+        public static int s_CAICurvePointBaseInCAIHandlingInfoOffset;
+
+        public static IntPtr GetCAIInfoByHash(uint hash)
+        {
+            for (uint i = 0; i < s_AIHandlingInfoCount; i++)
+            {
+                var tmpCAIHandlingInfo = *(ulong*)(s_AIHandlingInfoBase + i * 8);
+                if (*(uint*)(tmpCAIHandlingInfo + 0x08) == hash)
+                {
+                    return new IntPtr((byte*)tmpCAIHandlingInfo);
+                }
+            }
+            return IntPtr.Zero;
+        }
+
+        public static byte[] s_setSpecialFlightCurrentRatioNopBytes = new byte[8];
+        public static byte[] s_setSpecialFlightCurrentRatioOriginalBytes = new byte[8];
+        public static byte* s_setSpecialFlightCurrentRatioPatchAddr;
+
+        public static void InstallSetSpecialFlightCurrentRatioPatch()
+        {
+            SetSpecialFlightCurrentRatioPatch(true);
+        }
+
+        public static void UninstallSetSpecialFlightCurrentRatioPatch()
+        {
+            SetSpecialFlightCurrentRatioPatch(false);
+        }
+
+        private static void SetSpecialFlightCurrentRatioPatch(bool newState)
+        {
+            if (newState)
+            {
+                copyBytesToAddr(s_setSpecialFlightCurrentRatioPatchAddr, s_setSpecialFlightCurrentRatioNopBytes);
+            }
+            else
+            {
+                copyBytesToAddr(s_setSpecialFlightCurrentRatioPatchAddr, s_setSpecialFlightCurrentRatioOriginalBytes);
+            }
+        }
+
+        public static byte* s_engineTorqueMultiplierPatchAddr;
+        public static byte[] s_engineTorqueMultiplierPatchNopBytes;
+
+        public static void InstallEngineTorqueMultiplierPatch()
+        {
+            copyBytesToAddr(s_engineTorqueMultiplierPatchAddr, s_engineTorqueMultiplierPatchNopBytes);
+        }
+
+        private static byte* s_currentLanguageAddr;
+
+        public static void SetCurrentLanguage(uint language)
+        {
+            if (s_currentLanguageAddr == null || language < 0 || language > 12) return;
+            *(uint*)s_currentLanguageAddr = language;
+        }
+
+        #endregion
+
+        #region -- Hooking --
+
+        #region -- gxtEntry Hooking --
+
+        private static ConcurrentDictionary<uint, uint> g_gxtEntryDictionary = new ConcurrentDictionary<uint, uint>();
+
+        public static bool AddCustomGxtEntry(uint originalHash, uint newHash)
+        {
+            try
+            {
+                return g_gxtEntryDictionary.TryAdd(originalHash, newHash);
+            }
+            catch (Exception e)
+            {
+                Log.Message(Log.Level.Warning, $"Could not add GxtEntry {originalHash},{newHash}. An Exception was thrown: {e}");
+                return false;
+            }
+        }
+
+        public static bool UpdateCustomGxtEntry(uint originalHash, uint newHash)
+        {
+            uint oldHash = 0;
+            try
+            {
+                g_gxtEntryDictionary.TryRemove(originalHash, out oldHash);
+                return g_gxtEntryDictionary.TryAdd(originalHash, newHash);
+            }
+            catch (Exception e)
+            {
+                Log.Message(Log.Level.Warning, $"Could not Update GxtEntry {originalHash} from {oldHash} to {newHash}. An Exception was thrown: {e}");
+                return false;
+            }
+        }
+
+        public static bool GetCustomGxtEntry(uint originalHash, out uint entryHash)
+        {
+            try
+            {
+                return g_gxtEntryDictionary.TryGetValue(originalHash, out entryHash);
+            }
+            catch (Exception e)
+            {
+                entryHash = 0;
+                Log.Message(Log.Level.Warning, $"Could not retrieve GxtEntry for {originalHash}. An Exception was thrown: {e}");
+                return false;
+            }
+        }
+
+        public static bool RemoveCustomGxtEntry(uint originalHash, out uint oldHash)
+        {
+            try
+            {
+                return g_gxtEntryDictionary.TryRemove(originalHash, out oldHash);
+            }
+            catch (Exception e)
+            {
+                oldHash = 0;
+                Log.Message(Log.Level.Warning, $"Could not remove GxtEntry for {originalHash}. An Exception was thrown: {e}");
+                return false;
+            }
+        }
+
+        #region -- getGxtEntry MinHook -- 
+
+        private static delegate* unmanaged[Stdcall]<void*, uint, IntPtr> s_origGetGxtEntryFuncMinHooked;
+        public static IntPtr s_origGetGxtEntryFuncAddr;
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate IntPtr GetGxtEntryDelegate(void* gtxArray, uint gxtEntryHash);
+
+        private static GetGxtEntryDelegate s_getGxtEntryMinHookDelegate;
+
+        internal static void InitGxtEntryMinHook ()
+        {
+            if (s_origGetGxtEntryFuncAddr == IntPtr.Zero)
+                return;
+
+            s_getGxtEntryMinHookDelegate = new GetGxtEntryDelegate(GetGxtEntry_MinHook);
+            IntPtr hookPtr;
+            try
+            {
+                hookPtr = Marshal.GetFunctionPointerForDelegate(s_getGxtEntryMinHookDelegate);
+            }
+            catch (Exception e)
+            {
+                Log.Message(Log.Level.Warning, $"An exception was thrown while calling GetFunctionPointerForDelegate on s_getGxtEntryHookDel: {e}");
+                return;
+            }
+            if (hookPtr == IntPtr.Zero)
+            {
+                Log.Message(Log.Level.Warning, $"hookPtr is null for s_getGxtEntryHookDel.");
+                return;
+            }
+
+            var hookHandle = Hooking.CreateHook(s_origGetGxtEntryFuncAddr, hookPtr, Hooking.HookType.MinHook, "GxtMinHooked");
+            if (hookHandle.Status != 0)
+            {
+                Log.Message(Log.Level.Warning, $"{hookHandle.HookOwner} Could not create {hookHandle.HookName} of type {hookHandle.Type}");
+                return;
+            }
+            Hooking.EnableHook(hookHandle);
+
+            // Original function pointer
+            s_origGetGxtEntryFuncMinHooked = (delegate* unmanaged[Stdcall]<void*, uint, IntPtr>)hookHandle.OriginalTarget;
+        }
+
+        private static IntPtr GetGxtEntry_MinHook(void* gxtArray, uint gxtEntryHash)
+        {
+            // Call original function
+            if (s_origGetGxtEntryFuncMinHooked != null)
+            {
+                uint altHash;
+                if (GetCustomGxtEntry(gxtEntryHash, out altHash))
+                { 
+                    gxtEntryHash = altHash;
+                }
+                return s_origGetGxtEntryFuncMinHooked(gxtArray, gxtEntryHash);
+            }
+
+            Log.Message(Log.Level.Warning, $"s_origGetGxtEntryFuncMinHooked is null");
+            return IntPtr.Zero;
+        }
+
+        #endregion
+
+        #region -- GetGxtEntry CallHook - Currently Unused, and serves as a demo for CallHooks --
+
+        // This is currently superfluous and unused. Just serves as a "Demo" for CallHook.
+        // It was going to be used for the reimplementation of Camxxcore's PauseMenuHelper,
+        // but hooking the whole function for that makes more sense, since we do it anyways.
+        // Will remove this region once I use CallHook for another purpose.
+
+        private static IntPtr s_getGxtEntryFuncCall; // E8 ? ? ? ? call address
+        private static delegate* unmanaged[Stdcall]<void*, uint, IntPtr> s_origGetGxtEntryFunc;
+        private static GetGxtEntryDelegate s_getGxtEntryHookDel;
+
+        internal static void InitGxtEntryCallHook()
+        {
+            if (s_getGxtEntryFuncCall == IntPtr.Zero)
+            {
+                Log.Message(Log.Level.Warning, $"s_getGxtEntryFuncCall is null");
+                return;
+            }
+
+            s_getGxtEntryHookDel = new GetGxtEntryDelegate(GetGxtEntry_CallHook);
+            IntPtr hookPtr = Marshal.GetFunctionPointerForDelegate(s_getGxtEntryHookDel);
+
+            var hookHandle = Hooking.CreateHook(s_getGxtEntryFuncCall, hookPtr, Hooking.HookType.CallHook, "GxtCallHooked");
+            if (hookHandle.Status != 0)
+            {
+                Log.Message(Log.Level.Warning, $"{hookHandle.HookOwner} Could not create {hookHandle.HookName} of type {hookHandle.Type}");
+                return;
+            }
+            Hooking.EnableHook(hookHandle);
+
+            // Original function pointer
+            s_origGetGxtEntryFunc = (delegate* unmanaged[Stdcall]<void*, uint, IntPtr>)hookHandle.OriginalTarget;
+        }
+
+        private static IntPtr GetGxtEntry_CallHook(void* gxtArray, uint gxtEntryHash)
+        {
+            // Call original function
+            if (s_origGetGxtEntryFunc != null)
+            {
+                uint altHash;
+                if (GetCustomGxtEntry(gxtEntryHash, out altHash))
+                {
+                    gxtEntryHash = altHash;
+                }
+                return s_origGetGxtEntryFunc(gxtArray, gxtEntryHash);
+            }
+
+            Log.Message(Log.Level.Warning, $"s_origGetGxtEntryFunc is null");
+            return IntPtr.Zero;
+        }
+
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate void UpdateSpecialFlightModeVehicleBonesDelegate(ulong vehicleAddress);
+
+        private static IntPtr s_updateSpecialFlightModeVehicleBonesCall; // E8 ? ? ? ? call address
+        private static delegate* unmanaged[Stdcall]<ulong, void> s_originalUpdateSpecialFlightModeVehicleBonesFunc;
+        private static UpdateSpecialFlightModeVehicleBonesDelegate s_updateSpecialFlightModeVehicleBonesDel;
+
+        internal static void InitUpdateSpecialFlightModeVehicleBonesCallHook()
+        {
+            if (s_updateSpecialFlightModeVehicleBonesCall == IntPtr.Zero)
+            {
+                Log.Message(Log.Level.Warning, $"s_updateSpecialFlightModeVehicleBonesCall is null");
+                return;
+            }
+
+            s_updateSpecialFlightModeVehicleBonesDel = new UpdateSpecialFlightModeVehicleBonesDelegate(UpdateSpecialFlightModeVehicleBones_CallHook);
+            IntPtr hookPtr = Marshal.GetFunctionPointerForDelegate(s_updateSpecialFlightModeVehicleBonesDel);
+
+            var hookHandle = Hooking.CreateHook(s_updateSpecialFlightModeVehicleBonesCall, hookPtr, Hooking.HookType.CallHook, "UpdateSpecialFlightVehicleBonesCallHooked");
+            if (hookHandle.Status != 0)
+            {
+                Log.Message(Log.Level.Warning, $"{hookHandle.HookOwner} Could not create {hookHandle.HookName} of type {hookHandle.Type}");
+                return;
+            }
+            Hooking.EnableHook(hookHandle);
+
+            // Original function pointer
+            s_originalUpdateSpecialFlightModeVehicleBonesFunc = (delegate* unmanaged[Stdcall]<ulong, void>)hookHandle.OriginalTarget;
+            if (s_originalUpdateSpecialFlightModeVehicleBonesFunc == null)
+            {
+                // Logging here instead of inside the Hook, as it is called on tick.
+                Log.Message(Log.Level.Warning, $"s_originalUpdateSpecialFlightModeVehicleBonesFunc is null");
+            }
+        }
+
+        private static void UpdateSpecialFlightModeVehicleBones_CallHook(ulong vehicleAddress)
+        {
+
+            if (vehicleAddress == 0 || s_originalUpdateSpecialFlightModeVehicleBonesFunc == null)
+            {
+                // Fail silently, as Logging would otherwise occur on tick
+                return;
+            }
+
+            int vehicleModelHash = GetModelHashFromEntity(new IntPtr((long)vehicleAddress));
+            if (vehicleModelHash == (int)2069146067u /*oppressor2*/ || vehicleModelHash == (int)1483171323u /*deluxo*/)
+            {
+                s_originalUpdateSpecialFlightModeVehicleBonesFunc(vehicleAddress);
+            }
+            return;
+        }
+
+        #endregion
+
+        #endregion
+
         #endregion
     }
 }

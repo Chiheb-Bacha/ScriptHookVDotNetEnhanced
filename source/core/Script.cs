@@ -1,5 +1,6 @@
 //
 // Copyright (C) 2015 crosire & kagikn & contributors
+// Copyright (C) 2025 Chiheb-Bacha
 // License: https://github.com/scripthookvdotnet/scripthookvdotnet#license
 //
 
@@ -389,6 +390,7 @@ namespace SHVDN
             }
             catch (ThreadAbortException ex)
             {
+                Hooking.RemoveAllScriptHooksByScriptName(Name);
                 Log.Message(Log.Level.Warning, "Aborted script ", Name, ".", Environment.NewLine, ex.StackTrace);
             }
         }
@@ -410,6 +412,7 @@ namespace SHVDN
                 }
                 catch (ThreadAbortException)
                 {
+                    Hooking.RemoveAllScriptHooksByScriptName(Name);
                     // Stop main loop immediately on a thread abort exception
                     throw;
                 }
@@ -426,13 +429,14 @@ namespace SHVDN
             }
             catch (ThreadAbortException)
             {
+                Hooking.RemoveAllScriptHooksByScriptName(Name);
                 // Stop main loop immediately on a thread abort exception
                 throw;
             }
             catch (Exception ex)
             {
                 ScriptDomain.HandleUnhandledException(this, new UnhandledExceptionEventArgs(ex, true));
-
+                Hooking.RemoveAllScriptHooksByScriptName(Name);
                 // An exception during tick is fatal, so abort the script and stop main loop
                 Abort();
             }
@@ -477,7 +481,7 @@ namespace SHVDN
         public void Abort()
         {
             IsRunning = false;
-
+            Hooking.RemoveAllScriptHooksByScriptName(Name);
             try
             {
                 Aborted?.Invoke(this, EventArgs.Empty);
@@ -509,7 +513,7 @@ namespace SHVDN
             {
                 return; // Pause status has not changed, so nothing to do
             }
-
+            Hooking.DisableAllScriptHooksByScriptName(Name); // Disable script hooks temporarily when paused, otherwise the game might call functions within the paused script, causing it to freeze
             IsPaused = true;
 
             Log.Message(Log.Level.Info, "Paused script ", Name, ".");
@@ -523,7 +527,7 @@ namespace SHVDN
             {
                 return;
             }
-
+            Hooking.EnableAllScriptHooksByScriptName(Name); // Reenable the hooks when resuming from a sleep
             IsPaused = false;
 
             Log.Message(Log.Level.Info, "Resumed script ", Name, ".");
@@ -539,17 +543,20 @@ namespace SHVDN
             {
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
-
+                Hooking.DisableAllScriptHooksByScriptName(Name); // Disable script hooks temporarily when waiting, otherwise the game might call functions within the waiting script, causing it to freeze
                 do
                 {
                     _waitEvent.Release();
                     _continueEvent.Wait();
                 }
                 while (sw.ElapsedMilliseconds < ms);
+                Hooking.EnableAllScriptHooksByScriptName(Name); // Reenable the hooks after the waiting is over
             }
             else
             {
+                Hooking.DisableAllScriptHooksByScriptName(Name);
                 System.Threading.Thread.Sleep(ms);
+                Hooking.EnableAllScriptHooksByScriptName(Name);
             }
         }
     }

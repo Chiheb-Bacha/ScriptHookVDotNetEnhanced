@@ -1,5 +1,6 @@
 //
 // Copyright (C) 2023 kagikn & contributors
+// Copyright (C) 2025 Chiheb-Bacha
 // License: https://github.com/scripthookvdotnet/scripthookvdotnet#license
 //
 
@@ -53,6 +54,8 @@ namespace GTA
                 }
 
                 NativeMemory.AssignToFwRegdRef(address + NativeMemory.ProjectileRocketTargetOffset, targetAddress);
+                IsRedirected = true; // This is necessary for redirecting the homing missile.
+                OnFootHomingWeaponLockedOn = true; // This allows redirecting the homing missile without needing to lock onto a target before launching it.
             }
         }
 
@@ -417,6 +420,7 @@ namespace GTA
         public bool IsRedirected
         {
             get => GetProjectileRocketFlag(6);
+            set => SetProjectileRocketFlag(6, value);
             // Maybe we should have our `OnFootHomingWeaponLockedOn` set true in our setter when
             // `CWeaponInfo::GetIsOnFootHoming()` (where the instance is retrieved by
             // `CProjectile::m_uWeaponFiredFromHash`) returns true, just like how `CProjectileRocket::SetIsRedirected`

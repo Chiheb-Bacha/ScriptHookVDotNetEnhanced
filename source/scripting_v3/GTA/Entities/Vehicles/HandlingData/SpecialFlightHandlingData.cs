@@ -1,5 +1,6 @@
 //
 // Copyright (C) 2015 crosire & kagikn & contributors
+// Copyright (C) 2025 Chiheb-Bacha
 // License: https://github.com/scripthookvdotnet/scripthookvdotnet#license
 //
 
@@ -302,7 +303,7 @@ namespace GTA
                     return 0.0f;
                 }
 
-                return SHVDN.MemDataMarshal.ReadFloat(MemoryAddress + 0xA8);
+                return SHVDN.MemDataMarshal.ReadFloat(MemoryAddress + 0xA8); // TODO: Find this offset dynamically
             }
             set
             {
@@ -334,7 +335,7 @@ namespace GTA
                     return 0.0f;
                 }
 
-                return SHVDN.MemDataMarshal.ReadFloat(MemoryAddress + 0xAC);
+                return SHVDN.MemDataMarshal.ReadFloat(MemoryAddress + 0xAC); // TODO: Find this offset dynamically
             }
             set
             {
@@ -347,9 +348,27 @@ namespace GTA
                     return;
                 }
 
-                SHVDN.MemDataMarshal.WriteFloat(MemoryAddress + 0xAC, value);
+                SHVDN.MemDataMarshal.WriteFloat(MemoryAddress + 0xAC, value); 
             }
         }
+
+        /// <summary>
+        /// Gets the <see cref="SpecialFlightHandlingFlags"/> of this <see cref="SpecialFlightHandlingData"/>.
+        /// </summary>
+        public SpecialFlightHandlingFlags Flags
+        {
+            get
+            {
+                if (!IsValid || Game.FileVersion < VersionConstsForGameVersion.v1_0_1493_0)
+                {
+                    return 0.0f;
+                }
+
+                return (SpecialFlightHandlingFlags)SHVDN.MemDataMarshal.ReadUInt32(MemoryAddress + 0xB8); // TODO: Find this offset dynamically
+            }
+            // No setter is implemented, because some flags crash the game if altered.
+        }
+
 
         /// <summary>
         /// Determines if an <see cref="object"/> refers to the same special flight handling data as this <see cref="SpecialFlightHandlingData"/>.

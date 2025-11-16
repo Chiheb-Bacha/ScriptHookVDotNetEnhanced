@@ -1,14 +1,16 @@
 //
 // Copyright (C) 2015 crosire & kagikn & contributors
+// Copyright (C) 2025 Chiheb-Bacha
 // License: https://github.com/scripthookvdotnet/scripthookvdotnet#license
 //
 
-using GTA.Math;
-using GTA.Native;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using GTA.Math;
+using GTA.Native;
+using SHVDN;
 
 namespace GTA
 {
@@ -25,6 +27,7 @@ namespace GTA
         {
         }
 
+        public bool IsValid => MemoryAddress != IntPtr.Zero;
         /// <summary>
         /// Restores the health of this <see cref="Vehicle"/> and fixes any damage instantaneously.
         /// </summary>
@@ -550,7 +553,7 @@ namespace GTA
         }
 
         /// <summary>
-        /// Gets the handling data attached to this <see cref="Vehicle"/>.
+        /// Gets the handling data of this <see cref="Vehicle"/>.
         /// </summary>
         public HandlingData HandlingData
         {
@@ -566,6 +569,258 @@ namespace GTA
             }
         }
 
+        // This should be left private, because some cases could cause crashes.
+        // For example: if the vehicleModel corresponds to the Dubsta3 (6x6), and the Vehicle instance has 4 wheels, the game crashes.
+        // This has to do with Model/Handling/Damage Flags, but can only be mitigated if we add a per-VehicleInstance handling editor.
+        // Another example: if the vehicleModel corresponds to the Ruiner3, the game crashes.
+        // Another example: if the Vehicle instance is a Boat, and the vehicleModel isn't, the game crashes.
+        // Another example: if the vehicleModel is a SubmarineCar, and the Vehicle instance isn't, the game crashes.
+        // And more ...
+        // For the above-mentioned reasons, this should only be used in special cases, with definitive knowledge of what works.
+        // Any other handling editing should be done by modifying the individual HandlingData attributes.
+        private bool SetHandlingData(Model vehicleModel)
+        {
+            if (!IsValid || SHVDN.NativeMemory.Vehicle.HandlingDataOffset == 0 || vehicleModel == null || !vehicleModel.IsValid) // No need to check whethr the model is a Vehicle, since that's done in HandlingData.GetByVehicleModel
+            {
+                return false;
+            }
+            HandlingData handlingData = HandlingData.GetByVehicleModel(vehicleModel);
+            if (handlingData == null || !handlingData.IsValid)
+            {
+                return false;
+            }
+            
+            SHVDN.MemDataMarshal.WriteAddress(MemoryAddress + SHVDN.NativeMemory.Vehicle.HandlingDataOffset, handlingData.MemoryAddress);
+            return true;
+        }
+
+        // Used for caching the value so that IsSpecialFlightModeActivated is sped up.
+        private static IntPtr oppr2HandlingDataAddress = IntPtr.Zero;
+
+        /// <summary>
+        /// Gets a value indicating whether the SpecialFlightMode (oppressor2 flight mode) is activated for this <see cref="Vehicle"/>.
+        /// </summary>
+        /// <returns>
+        /// <see langword="true" /> if the special flight mode is activated; otherwise, <see langword="false" />.
+        /// </returns>
+        public bool IsSpecialFlightModeActivated()
+        {
+            if (HandlingData.Equals(HandlingData.GetByVehicleModel(Model))) return false;
+            if (oppr2HandlingDataAddress == IntPtr.Zero)
+            {
+                oppr2HandlingDataAddress = HandlingData.GetByVehicleModel(VehicleHash.Oppressor2).MemoryAddress;
+            }
+            return HandlingData.MemoryAddress.Equals(oppr2HandlingDataAddress);
+        }
+
+        /// <summary>
+        /// Activates the special flight mode (oppressor2 flight mode) for this <see cref="Vehicle"/>.
+        /// </summary>
+        /// <remarks>
+        /// This only works on <see cref="VehicleType.Automobile"/>, <see cref="VehicleType.SubmarineCar"/>, <see cref="VehicleType.Bicycle"/>,
+        /// and <see cref="VehicleType.Motorcycle"/> and will fail silently if used on another <see cref="VehicleType"/>.
+        /// </remarks>
+        /// <returns>
+        /// <see langword="true" /> if the special flight mode has been activated successfully; otherwise, <see langword="false" />.
+        /// </returns>
+        public bool ActivateSpecialFlightMode()
+        {
+            // Only activate if not activated.
+            if (IsSpecialFlightModeActivated()) return false;
+            return SetSpecialFlightMode(true);
+        }
+
+        /// <summary>
+        /// Deactivates the special flight mode (oppressor2 flight mode) for this <see cref="Vehicle"/>.
+        /// </summary>
+        /// <remarks>
+        /// This has no effect if the <see cref="Vehicle"/> is the oppressor2.
+        /// Preferably pass this call to a script that doesn't do anything onTick, because it calls Script.Wait(0), thus pausing script execution for a couple frames.
+        /// </remarks>
+        /// <returns>
+        /// <see langword="true" /> if the special flight mode has been deactivated successfully; otherwise, <see langword="false" />.
+        /// </returns>
+        public bool DeactivateSpecialFlightMode()
+        {
+            // Only deactivate if activated
+            if (!IsSpecialFlightModeActivated()) return false; 
+            return SetSpecialFlightMode(false);
+        }
+
+        private bool SetSpecialFlightMode(bool newState)
+        {
+            if (newState)
+            {
+                Model oppressor2Model = new Model(VehicleHash.Oppressor2); // We use the handling of the oppressor2 to enable the special flight mode.
+                if (IsModelHandlingCompatibleWithVehicleModel(oppressor2Model, Model))
+                {
+                    if (Model.Hash == (int)VehicleHash.Deluxo) return false; // The deluxo gets bugged if we apply the oppressor2 handling to it, in that it will be stuck in the special flight mode.
+                    return SetHandlingData(oppressor2Model);
+                }
+                return false;
+            }
+            else
+            {
+                NativeMemory.InstallSetSpecialFlightCurrentRatioPatch();
+
+                float duration = 1.0f;
+                float startRatio = 1.0f;
+                float endRatio = 0.0f;
+                float elapsed = 0f;
+                // Used to smooth out the deployment of the wheels.
+                while (elapsed < duration)
+                {
+                    float deltaTime = Game.LastFrameTime;
+                    elapsed += deltaTime;
+                    float t = elapsed / duration;
+                    if (t > 1f) t = 1f;
+                    SpecialFlightModeCurrentRatio = startRatio * (1f - t) + endRatio * t;
+                    Script.Wait(0); // DO NOT REMOVE THIS!
+                }
+                SpecialFlightModeCurrentRatio = endRatio;
+
+                bool result = SetHandlingData(Model); // This should always return true.
+                NativeMemory.UninstallSetSpecialFlightCurrentRatioPatch();
+                SpecialFlightModeCurrentRatio = 0f;
+                return result;
+            }
+        }
+
+        // Used for caching the handling address of drift cars so that IsDriftModeActivated is sped up.
+        private static HashSet<IntPtr> driftHandlingAddresses = new HashSet<IntPtr>();
+
+        /// <summary>
+        /// Gets a value indicating whether the drift mode is activated for this <see cref="Vehicle"/>.
+        /// </summary>
+        /// <returns>
+        /// <see langword="true" /> if the drift mode is activated; otherwise, <see langword="false" />.
+        /// </returns>
+        public bool IsDriftModeActivated()
+        {
+            if (HandlingData.Equals(HandlingData.GetByVehicleModel(Model))) return false;
+            if (driftHandlingAddresses.Count == 0)
+            {
+                foreach (DriftCarHash driftHash in Enum.GetValues(typeof(DriftCarHash)))
+                {
+                    var handlingData = HandlingData.GetByVehicleModel((VehicleHash)driftHash);
+                    if (handlingData != null)
+                        driftHandlingAddresses.Add(handlingData.MemoryAddress);
+                }
+            }
+
+            return driftHandlingAddresses.Contains(HandlingData.MemoryAddress);
+        }
+
+        /// <summary>
+        /// Activates the drift mode for this <see cref="Vehicle"/>.
+        /// </summary>
+        /// <param name="driftType">A value from <see cref="DriftCarHash"/></param>
+        /// <returns></returns>
+        public bool ActivateDriftMode(DriftCarHash driftType)
+        {
+            if (IsSpecialFlightModeActivated()) DeactivateSpecialFlightMode();
+            return SetDriftMode(true, driftType);
+        }
+
+        /// <summary>
+        /// Deactivates the drift mode for this <see cref="Vehicle"/>.
+        /// </summary>
+        /// <returns>
+        /// <see langword="true" /> if drift mode has been deactivated successfully; otherwise, <see langword="false" />.
+        /// </returns>
+        public bool DeactivateDriftMode()
+        {
+            return SetDriftMode(false);
+        }
+
+        private bool SetDriftMode(bool newState, DriftCarHash driftType = 0)
+        {
+            if (newState)
+            {
+                Model driftCarModel = new Model((VehicleHash)driftType);
+                if (IsModelHandlingCompatibleWithVehicleModel(driftCarModel, Model))
+                {
+                    return SetHandlingData(driftCarModel);
+                }
+                return false;
+            }
+            else
+            {
+                return SetHandlingData(Model); // This should always return true.
+            }
+        }
+
+        // TODO: add a function that checks whether a subhandling is compatible with a vehicle model, which would mainly be used to add the oppr2 specialFlightHandling to amphibious vehicles,
+        // and CarHandlingData to automobiles that don't have it (for stancing using SET_REDUCED_SUSPENSION_FORCE)
+
+        /// <summary>
+        /// Returns a value indicating whether the handling of a vehicle model is compatible with another vehicle model
+        /// </summary>
+        /// <param name="newModel">The vehicle model, whose handling is checked for compatiblity with the handling of the vehicle model <paramref name="currentModel"/></param>
+        /// <param name="currentModel">The vehicle model, which is checked for compatiblity with the handling of the vehicle model <paramref name="newModel"/></param>
+        /// <returns>
+        /// <see langword="true" /> if the handling of <paramref name="newModel"/> is compatible with <paramref name="currentModel"/>; otherwise, <see langword="false" />.
+        /// </returns>
+        public static bool IsModelHandlingCompatibleWithVehicleModel(Model newModel, Model currentModel)
+        {
+            if (newModel == null || currentModel == null || !newModel.IsValid || !currentModel.IsValid || !newModel.IsVehicle || !currentModel.IsVehicle)
+            {
+                return false;
+            }
+
+            VehicleType newVehicleType = (VehicleType)NativeMemory.GetVehicleType(newModel);
+            VehicleType currentVehicleType = (VehicleType)NativeMemory.GetVehicleType(currentModel);
+
+            if (newVehicleType == VehicleType.None || currentVehicleType == VehicleType.None)
+            {
+                return false;
+            }
+
+            bool isNewModelOpp2 = newModel.Hash == (int)VehicleHash.Oppressor2;
+            if (isNewModelOpp2 && (currentModel.Hash == (int)VehicleHash.Oppressor ||
+                currentModel.Hash == (int)VehicleHash.Deluxo || currentModel.Hash == (int)VehicleHash.Oppressor2))
+            {
+                // These might satisfy some of the other conditions, but are buggy in-game, if you apply the opp2 handling to them.
+                return false;
+            }
+
+            if (newVehicleType == currentVehicleType)
+            {
+                return true;
+            }
+
+            if (newVehicleType == VehicleType.Automobile && currentVehicleType == VehicleType.SubmarineCar)
+            {
+                return true;
+            }
+
+            if (isNewModelOpp2 &&
+                (currentVehicleType == VehicleType.Automobile ||
+                currentVehicleType == VehicleType.Bicycle || currentVehicleType == VehicleType.Motorcycle ||
+                currentVehicleType == VehicleType.SubmarineCar))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        // For internal use only. Currently unused, and won't be part of v1.1.0.0 as it requires a lot of testing and checks, because adding subhandlings from and to incompatibles vehicles crashes the game.
+        // Will be mainly used to add CarHandlingData subhandling to cars that don't have it, as well as enabling special flight mode for AmphibiousCars and AmphibiousQuadbikes, since the other method crashes the game.
+        // If the SubHandling array has empty spaces left, this adds the given subHandlingData to it.
+        // If an existing SubHandlingData of the same type exists, it replaces it with the given one.
+        // It returns true if the operation succeeded, false otherwise.
+
+        // TODO: make this only update subhandlings of handlings fetched from vehicle model and not current handling, as that might be of a type that doesn't support this
+        private bool UpdateSubHandlingData(BaseSubHandlingData subHandlingData) 
+        {
+            if (!IsValid)
+            {
+                return false;
+            }
+            
+            return SHVDN.NativeMemory.Vehicle.UpdateSubHandlingData(HandlingData.MemoryAddress, subHandlingData.MemoryAddress, (int)subHandlingData.HandlingType);
+        }
         #endregion
 
         #region Health
@@ -803,6 +1058,22 @@ namespace GTA
         public float EngineTorqueMultiplier
         {
             set => Function.Call(Hash.SET_VEHICLE_CHEAT_POWER_INCREASE, Handle, value);
+            get
+            {
+                if (!IsValid || SHVDN.NativeMemory.Vehicle.EngineTorqueMultiplierOffset == 0)
+                {
+                    return 0.0f;
+                }
+                return SHVDN.MemDataMarshal.ReadFloat(MemoryAddress + SHVDN.NativeMemory.Vehicle.EngineTorqueMultiplierOffset);
+            }
+        }
+
+        /// <summary>
+        /// Installs a memory patch, allowing <see cref="EngineTorqueMultiplier"/> to be modified without it being overwritten by the game.
+        /// </summary>
+        public static void PatchEngineTorqueMultiplierUpdate()
+        {
+            SHVDN.NativeMemory.InstallEngineTorqueMultiplierPatch();
         }
 
         /// <summary>
@@ -1871,6 +2142,79 @@ namespace GTA
         {
             Function.Call(Hash.SET_VEHICLE_DAMAGE, Handle, position.X, position.Y, position.Z, damageAmount, radius);
         }
+
+        /// <summary>
+        /// Returns <see langword="true"/> if the stuck timer of this <see cref="Vehicle"/> for a passed stuck type
+        /// is more than a passed time value.
+        /// </summary>
+        /// <param name="stuckType">The stuck type to test.</param>
+        /// <param name="requiredTime">
+        /// <para>
+        /// The minimum required time for the stuck timer for the <paramref name="stuckType"/> to surpass so
+        /// this method can return <see langword="true"/>.
+        /// </para>
+        /// </param>
+        /// <returns><see langword="true"/> if the stuck timer for the passed stuck time is more than
+        /// <paramref name="requiredTime"/>, otherwise, <see langword="false"/>. If the stuck timer is the same as
+        /// <paramref name="requiredTime"/>, this method will return <see langword="false"/>.
+        /// </returns>
+        /// <exception cref="ArgumentException">
+        /// <paramref name="stuckType"/> is <see cref="VehicleStuckType.ResetAll"/>.
+        /// </exception>
+        /// <remarks>
+        /// <para>
+        /// <see cref="Vehicle"/> stuck timers increase when the position delta of <see cref="Vehicle"/> are not too
+        /// large and they meet their certain conditions, and reset to zero otherwise. The max value of the stuck
+        /// timers are `<c>65535</c>` and they clamp to `65535` when the addition of the time step in milliseconds to
+        /// current stuck timer values are `65535` or more, so no overflows will not occur for them.
+        /// </para>
+        /// <para>
+        /// The position delta limit from the last stuck position except for <see cref="VehicleStuckType.Jammed"/> is
+        /// for non-watercraft <see cref="Vehicle"/>s are `<c>2f</c>` and the one for watercraft ones are `<c>1f</c>`.
+        /// When the <see cref="Vehicle"/> is a watercraft and this method calculates a position delta for the 3 stuck
+        /// timers (not for the jammed one), the Z-axis delta is multiplied by `<c>0.2f</c>`. How the method does
+        /// determine if the <see cref="Vehicle"/> is a watercraft is described in the paragraph below.
+        /// The one for <see cref="VehicleStuckType.Jammed"/> from the last jammed position is `<c>3f</c>` for any
+        /// <see cref="Vehicle"/>s.
+        /// The last jammed position for <see cref="VehicleStuckType.Jammed"/> is different from the one for any other
+        /// stuck types, and they update independently of each other and they do only when the position deltas are too
+        /// large to consider the <see cref="Vehicle"/> stucked or jammed.
+        /// </para>
+        /// <para>
+        /// If the <see cref="VehicleType"/> of <see cref="Vehicle"/> is <see cref="VehicleType.Boat"/>,
+        /// <see cref="VehicleType.Submarine"/>, <see cref="VehicleType.SubmarineCar"/>,
+        /// <see cref="VehicleType.AmphibiousAutomobile"/>, or <see cref="VehicleType.AmphibiousQuadBike"/>, or if
+        /// the <see cref="Vehicle"/> has a <see cref="SeaPlaneHandlingData"/> and is touching water at all,
+        /// this method treats <see cref="Vehicle"/> as a watercraft. However, if the <see cref="VehicleType"/> of
+        /// <see cref="Vehicle"/> is <see cref="VehicleType.SubmarineCar"/>,
+        /// <see cref="VehicleType.AmphibiousAutomobile"/>, or <see cref="VehicleType.AmphibiousQuadBike"/> but it is
+        /// not touching water at all, this method does not treat <see cref="Vehicle"/> as a watercraft.
+        /// </para>
+        /// <para>
+        /// the method always returns <see langword="false"/> when `<c>65535</c>` is passed to
+        /// <paramref name="requiredTime"/>.
+        /// </para>
+        /// </remarks>
+        public bool IsStuckTimerUp(VehicleStuckType stuckType, ushort requiredTime)
+        {
+            // `ResetAll` is only for `RESET_VEHICLE_STUCK_TIMER`
+            if (stuckType is VehicleStuckType.ResetAll)
+            {
+                ThrowHelper.ThrowArgumentException("`VehicleStuckType.ResetAll` is not supported.", nameof(stuckType));
+            }
+
+            return Function.Call<bool>(Hash.IS_VEHICLE_STUCK_TIMER_UP, Handle, stuckType, requiredTime);
+        }
+
+        /// <summary>
+        /// Resets a stuck timer of this <see cref="Vehicle"/>.
+        /// </summary>
+        /// <param name="stuckType">
+        /// The stuck type to specify a stuck timer to reset. <see cref="VehicleStuckType.ResetAll"/> resets
+        /// all of the 4 stuck timers.
+        /// </param>
+        public void ResetVehicleStuckTimer(VehicleStuckType stuckType)
+            => Function.Call(Hash.RESET_VEHICLE_STUCK_TIMER, Handle, stuckType);
 
         #endregion
 

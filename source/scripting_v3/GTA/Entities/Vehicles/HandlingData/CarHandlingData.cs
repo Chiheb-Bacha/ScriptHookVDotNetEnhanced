@@ -1,5 +1,6 @@
 //
 // Copyright (C) 2015 crosire & kagikn & contributors
+// Copyright (C) 2025 Chiheb-Bacha
 // License: https://github.com/scripthookvdotnet/scripthookvdotnet#license
 //
 
@@ -220,6 +221,37 @@ namespace GTA
                 SHVDN.MemDataMarshal.WriteFloat(MemoryAddress + 0x28, value);
             }
         }
+
+        /// <summary>
+        /// Gets or sets the <see cref="CarAdvancedFlags"/> of this <see cref="CarHandlingData"/>.
+        /// </summary>
+        public CarAdvancedFlags AdvancedFlags
+        {
+            get
+            {
+                if (!IsValid || Game.FileVersion < VersionConstsForGameVersion.v1_0_1365_1)
+                {
+                    return 0.0f;
+                }
+
+                return (CarAdvancedFlags)SHVDN.MemDataMarshal.ReadUInt32(MemoryAddress + 0x3C);
+            }
+            set
+            {
+                if (Game.FileVersion < VersionConstsForGameVersion.v1_0_1365_1)
+                {
+                    GameVersionNotSupportedException.ThrowIfNotSupported((VersionConstsForGameVersion.v1_0_1365_1), nameof(CarHandlingData), nameof(EngineResistance));
+                }
+
+                if (!IsValid)
+                {
+                    return;
+                }
+
+                SHVDN.MemDataMarshal.WriteUInt32(MemoryAddress + 0x3C, (uint)value);
+            }
+        }
+
 
         /// <summary>
         /// Determines if an <see cref="object"/> refers to the same car handling data as this <see cref="CarHandlingData"/>.

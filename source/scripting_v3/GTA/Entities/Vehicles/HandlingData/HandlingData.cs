@@ -1,9 +1,11 @@
 //
 // Copyright (C) 2015 crosire & kagikn & contributors
+// Copyright (C) 2025 Chiheb-Bacha
 // License: https://github.com/scripthookvdotnet/scripthookvdotnet#license
 //
 
 using GTA.Math;
+using SHVDN;
 using System;
 
 namespace GTA
@@ -870,6 +872,51 @@ namespace GTA
                 SHVDN.MemDataMarshal.WriteFloat(MemoryAddress + 0x120, value);
             }
         }
+        /// <summary>
+        /// Gets the <see cref="VehicleModelFlags"/> set for this <see cref="HandlingData"/> instance.
+        /// </summary>
+        public VehicleModelFlags ModelFlags
+        {
+            get
+            {
+                if (!IsValid)
+                {
+                    return 0;
+                }
+
+                return (VehicleModelFlags)SHVDN.MemDataMarshal.ReadUInt32(MemoryAddress + 0x124);
+            }
+        }
+        /// <summary>
+        /// Gets the <see cref="VehicleHandlingFlags"/> set for this <see cref="HandlingData"/> instance.
+        /// </summary>
+        public VehicleHandlingFlags HandlingFlags
+        {
+            get
+            {
+                if (!IsValid)
+                {
+                    return 0;
+                }
+
+                return (VehicleHandlingFlags)SHVDN.MemDataMarshal.ReadUInt32(MemoryAddress + 0x128);
+            }
+        }
+        /// <summary>
+        /// Gets the <see cref="VehicleDamageFlags"/> set for this <see cref="HandlingData"/> instance.
+        /// </summary>
+        public VehicleDamageFlags DamageFlags
+        {
+            get
+            {
+                if (!IsValid)
+                {
+                    return 0;
+                }
+
+                return (VehicleDamageFlags)SHVDN.MemDataMarshal.ReadUInt32(MemoryAddress + 0x12C);
+            }
+        }
 
         public float RollCenterHeightFront
         {
@@ -1424,6 +1471,61 @@ namespace GTA
             }
         }
 
+
+        /// <summary>
+        /// Gets the <see cref="GTA.AIHandlingHash"/> for this <see cref="HandlingData"/> instance.
+        /// </summary>
+        public AIHandlingHash AIHandlingHash
+        {
+            get
+            {
+                if (!IsValid)
+                {
+                    return 0;
+                }
+                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_1180_2 ? 0x13C : 0x134; // TODO: Find this offset dynamically
+                return (AIHandlingHash)SHVDN.MemDataMarshal.ReadUInt32(MemoryAddress + offset);
+            }
+            private set // This is private, as it has no effect if changed alone. It should be changed when changing CAIHandlingInfo 
+            {
+                if (!IsValid)
+                {
+                    return;
+                }
+                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_1180_2 ? 0x13C : 0x134; // TODO: Find this offset dynamically
+                SHVDN.MemDataMarshal.WriteUInt32(MemoryAddress + offset, (uint)value);
+            }
+        }
+        /// <summary>
+        /// Gets or sets the <see cref="GTA.CAIHandlingInfo"/> for this <see cref="HandlingData"/> instance.
+        /// </summary>
+        public CAIHandlingInfo CAIHandlingInfo
+        {
+            get
+            {
+                if (!IsValid)
+                {
+                    return null;
+                }
+                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_1180_2 ? NativeMemory.s_AIHandlingInfoInHandlingInfoOffset : 0x148; // 0x150
+                return new CAIHandlingInfo(SHVDN.MemDataMarshal.ReadAddress(MemoryAddress + offset));
+            }
+            set
+            {
+                if (value == null)
+                {
+                    return;
+                }
+                if (!IsValid)
+                {
+                    return;
+                }
+                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_1180_2 ? NativeMemory.s_AIHandlingInfoInHandlingInfoOffset : 0x148; // 0x150
+                SHVDN.MemDataMarshal.WriteAddress(MemoryAddress + offset, value.MemoryAddress);
+                AIHandlingHash = value.NameHash;
+            }
+        }
+
         /// <summary>Gets the <see cref="GTA.BikeHandlingData"/> of this <see cref="HandlingData"/>.</summary>
         /// <value>A <see cref="GTA.BikeHandlingData"/> of the <see cref="HandlingData"/>.</value>
         /// <remarks>If the <see cref="HandlingData"/> does not have a bike handling data, this property returns <see langword="null"/>.</remarks>
@@ -1521,6 +1623,17 @@ namespace GTA
             {
                 IntPtr vehicleWeaponHandlingDataAddress = GetSubHandlingData(HandlingType.Weapon);
                 return vehicleWeaponHandlingDataAddress != IntPtr.Zero ? new VehicleWeaponHandlingData(vehicleWeaponHandlingDataAddress, this) : null;
+            }
+        }
+        /// <summary>Gets the <see cref="GTA.SpecialFlightHandlingData"/> of this <see cref="HandlingData"/>.</summary>
+        /// <value>A vertical <see cref="GTA.SpecialFlightHandlingData"/> of the <see cref="HandlingData"/>.</value>
+        /// <remarks>If the <see cref="HandlingData"/> does not have a special flight handling data, this property returns <see langword="null"/>.</remarks>
+        public SpecialFlightHandlingData SpecialFlightHandlingData
+        {
+            get
+            {
+                IntPtr specialFlightHandlingDataAddress = GetSubHandlingData(HandlingType.SpecialFlight);
+                return specialFlightHandlingDataAddress != IntPtr.Zero ? new SpecialFlightHandlingData(specialFlightHandlingDataAddress, this) : null;
             }
         }
 

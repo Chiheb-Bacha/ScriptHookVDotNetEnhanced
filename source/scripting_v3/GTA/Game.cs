@@ -131,7 +131,10 @@ namespace GTA
         /// <summary>
         /// Gets the current game language.
         /// </summary>
-        public static Language Language => Function.Call<Language>(Hash.GET_CURRENT_LANGUAGE); // TODO: add a setter that uses NativeMemory
+        public static Language Language {
+            get => Function.Call<Language>(Hash.GET_CURRENT_LANGUAGE);
+            set => SHVDN.NativeMemory.SetCurrentLanguage((uint)value);
+        }
 
         /// <summary>
         /// Gets the "FileVersion" resource value of GTA5.exe or GTA5_Enhanced.exe, which is the same as what SHV's function
@@ -743,6 +746,22 @@ namespace GTA
         }
 
         /// <summary>
+        /// Overwrites a text entry corresponding to the GXT key hash <paramref name="entryLabelHash"/> with <paramref name="entry"/>, which is either truncated or padded to match the length of the original entry.
+        /// </summary>
+        /// <remarks>
+        /// Scripts should only overwrite entries, which they have tested and are sure won't crash the game, because the game might depend on some of them to be unchanged.
+        /// </remarks>
+        /// <param name="entryLabelHash">The GXT key hash.</param>
+        /// <param name="entry">The new text, which overwrites the old entry.</param>
+        /// <returns>
+        /// <see langword="true"/> if the entry was successfully overwritten, <see langword="false"/> if <paramref name="entryLabelHash"/> was not found.
+        /// </returns>
+        public static bool SetLocalizedString(int entryLabelHash, string entry)
+        {
+            return SHVDN.NativeMemory.SetGxtEntryByHash(entryLabelHash, entry);
+        }
+
+        /// <summary>
         /// Gets a value associated with the specified index of the profile setting.
         /// </summary>
         /// <param name="index">The index of the profile setting values.</param>
@@ -860,5 +879,97 @@ namespace GTA
         {
             return NativeMemory.IsSelectionWheelsPatched();
         }
+
+        /// <summary>
+        /// Adds a gxt entry hash as a replacement for another gxt entry hash used by the game. Hashes can be found inside <c>.gxt2</c> text files.
+        /// </summary>
+        /// <param name="originalHash">The original gxt hash, which can be found in <c>.gxt2</c> text files</param>
+        /// <param name="newHash">The gxt hash to replace <paramref name="originalHash"/>, which can also be found in <c>.gxt2</c> text files. Use 0 for a blank text.</param>
+        /// <returns>
+        /// <see langword="true"/> if <paramref name="newHash"/> has been added successfully as a replacement for <paramref name="originalHash"/>; otherwise, <see langword="false"/>.
+        /// </returns>
+        public static bool AddCustomGxtEntry(uint originalHash, uint newHash)
+        {
+            return NativeMemory.AddCustomGxtEntry(originalHash, newHash);
+        }
+
+        /// <summary>
+        /// Adds or updates a gxt entry hash which replaces another gxt entry hash used by the game. Hashes can be found inside <c>.gxt2</c> text files.
+        /// </summary>
+        /// <param name="originalHash">The original gxt hash, which can be found in <c>.gxt2</c> text files</param>
+        /// <param name="newHash">The gxt hash to replace <paramref name="originalHash"/>, which can also be found in <c>.gxt2</c> text files. Use 0 for a blank text.</param>
+        /// <returns>
+        /// <see langword="true"/> if the replacement of <paramref name="originalHash"/> has been updated successfully to <paramref name="newHash"/> even if none was set; otherwise, <see langword="false"/>.
+        /// </returns>
+        public static bool UpdateCustomGxtEntry(uint originalHash, uint newHash)
+        {
+            return NativeMemory.UpdateCustomGxtEntry(originalHash, newHash);
+        }
+
+        /// <summary>
+        /// Gets the gxt entry hash used to replace <paramref name="originalHash"/>. The value is returned inside <paramref name="entryHash"/> if the method returns <see langword="true"/>.
+        /// </summary>
+        /// <param name="originalHash">The original gxt hash, which can be found in <c>.gxt2</c> text files</param>
+        /// <param name="entryHash">The gxt hash used to replace <paramref name="originalHash"/>. Passed by reference, so the value is inside of it in case the method returns <see langword="true"/>.</param>
+        /// <returns>
+        /// <see langword="true"/> if <paramref name="originalHash"/> has a replacement hash <paramref name="entryHash"/> and it was successfully retrieved; otherwise, <see langword="false"/>.
+        /// </returns>
+        public static bool GetCustomGxtEntry(uint originalHash, out uint entryHash)
+        {
+            return NativeMemory.GetCustomGxtEntry(originalHash, out entryHash);
+        }
+
+        /// <summary>
+        /// Removes the gxt entry hash used to replace <paramref name="originalHash"/>. The value is returned inside <paramref name="oldHash"/> if the method returns <see langword="true"/>.
+        /// </summary>
+        /// <param name="originalHash">The original gxt hash, which can be found in <c>.gxt2</c> text files</param>
+        /// <param name="oldHash">The gxt hash used to replace <paramref name="originalHash"/> before being removed. Passed by reference, so the value is inside of it in case the method returns <see langword="true"/>.</param>
+        /// <returns>
+        /// <see langword="true"/> if the replacement hash for <paramref name="originalHash"/>, which is <paramref name="oldHash"/>, has been successfully removed; otherwise, <see langword="false"/>.
+        /// </returns>
+        public static bool RemoveCustomGxtEntry(uint originalHash, out uint oldHash)
+        {
+            return NativeMemory.RemoveCustomGxtEntry(originalHash, out oldHash);
+        }
+
+        /// <summary>
+        /// Enables or disables <c>RiotMode</c>.
+        /// </summary>
+        /// <remarks>
+        /// Riot mode has several effects:
+        /// <list type="bullet">
+        /// <item>
+        /// <description>Most peds become hostile toward each other, including the player.</description>
+        /// </item>
+        /// <item>
+        /// <description>Random peds are equipped with either a pistol or a Micro SMG.</description>
+        /// </item>
+        /// <item>
+        /// <description>Peds will always select their best available weapon.</description>
+        /// </item>
+        /// <item>
+        /// <description>Peds have infinite ammunition.</description>
+        /// </item>
+        /// </list>
+        /// <para>
+        /// Peds with the <c>Random</c> population type do <b>not</b> attack peds considered friendly to them, even when riot mode is active.
+        /// Friendliness is determined by <c>CPedIntelligence::IsFriendlyWith(CPed*)</c>, which returns <c>true</c> when:
+        /// <list type="bullet">
+        /// <item>
+        /// <description>The relationship from the caller ped’s relationship group to the other ped’s group is either <c>Respect</c> or <c>Like</c>.</description>
+        /// </item>
+        /// <item>
+        /// <description>Both peds belong to the same relationship group.</description>
+        /// </item>
+        /// </list>
+        /// Note that this relationship check is one-directional—the reverse is not always true.
+        /// </para>
+        /// </remarks>
+        public static bool IsRiotModeEnabled
+        {
+            // TODO: add a getter
+            set => Function.Call(Hash.SET_RIOT_MODE_ENABLED, value);
+        }
+
     }
 }

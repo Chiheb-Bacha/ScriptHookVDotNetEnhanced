@@ -1,5 +1,6 @@
 //
 // Copyright (C) 2015 crosire & kagikn & contributors
+// Copyright (C) 2025 Chiheb-Bacha
 // License: https://github.com/scripthookvdotnet/scripthookvdotnet#license
 //
 
@@ -56,6 +57,18 @@ namespace SHVDN
             unsafe
             {
                 return *(int*)address.ToPointer();
+            }
+        }
+        /// <summary>
+        /// Reads a single 32-bit unsigned value from the specified <paramref name="address"/>.
+        /// </summary>
+        /// <param name="address">The memory address to access.</param>
+        /// <returns>The value at the address.</returns>
+        public static uint ReadUInt32(IntPtr address)
+        {
+            unsafe
+            {
+                return *(uint*)address.ToPointer();
             }
         }
         /// <summary>
@@ -198,6 +211,19 @@ namespace SHVDN
             unsafe
             {
                 int* data = (int*)address.ToPointer();
+                *data = value;
+            }
+        }
+        /// <summary>
+        /// Writes a single 32-bit unsigned value to the specified <paramref name="address"/>.
+        /// </summary>
+        /// <param name="address">The memory address to access.</param>
+        /// <param name="value">The value to write.</param>
+        public static void WriteUInt32(IntPtr address, uint value)
+        {
+            unsafe
+            {
+                uint* data = (uint*)address.ToPointer();
                 *data = value;
             }
         }

@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System;
 using System.Globalization;
+using System.ComponentModel;
 
 namespace SHVDN
 {
@@ -73,7 +74,6 @@ namespace SHVDN
         /// <inheritdoc cref="FindPatternBmh(string, string, IntPtr, ulong)"/>
         public static unsafe byte* FindPatternBmh(string pattern, string mask)
         {
-            // LogMemPatternNotFound(pattern, mask, IntPtr.Zero, 0);
             ProcessModule module = Process.GetCurrentProcess().MainModule;
             return FindPatternBmh(pattern, mask, module.BaseAddress, (ulong)module.ModuleMemorySize);
         }
@@ -89,7 +89,6 @@ namespace SHVDN
             }
 
             ulong size = (ulong)module.ModuleMemorySize - ((ulong)startAddress - (ulong)module.BaseAddress);
-            // LogMemPatternNotFound(pattern, mask, startAddress, size);
             return FindPatternBmh(pattern, mask, startAddress, size);
         }
 
@@ -133,16 +132,16 @@ namespace SHVDN
                 }
             }
 
-             LogMemPatternNotFound(pattern, mask, startAddress, size);
-
             return null;
         }
 
-        public static unsafe byte* FindPatternBmh(string pattern) => FindPatternBmh(pattern, IntPtr.Zero, 0);
+        public static unsafe byte* FindPatternBmh(string pattern) => FindPatternBmh(pattern, IntPtr.Zero, 0, false);
 
-        public static unsafe byte* FindPatternBmh(string pattern, IntPtr startAddress) => FindPatternBmh(pattern, startAddress, 0);
+        public static unsafe byte* FindPatternBmh(string pattern, IntPtr startAddress) => FindPatternBmh(pattern, startAddress, 0, false);
 
-        public static unsafe byte* FindPatternBmh(string pattern, IntPtr startAddress, ulong size)
+        public static unsafe byte* FindPatternBmh(string pattern, IntPtr startAddress, ulong size) => FindPatternBmh(pattern, startAddress, size, false);
+        
+        public static unsafe byte* FindPatternBmh(string pattern, IntPtr startAddress, ulong size, bool isScriptPattern)
         {
             string[] array = pattern.Split(' ');
             StringBuilder stringBuilder = new StringBuilder(array.Length);
@@ -165,28 +164,49 @@ namespace SHVDN
                     }
                 }
             }
-            
+
+            pattern = stringBuilder.ToString();
+            string mask = stringBuilder2.ToString();
+
+            byte* address;
+
             if (startAddress != IntPtr.Zero)
             {
                 if (size != 0)
                 {
-                    return FindPatternBmh(stringBuilder.ToString(), stringBuilder2.ToString(), startAddress, size);
+                    address = FindPatternBmh(pattern, mask, startAddress, size);
                 }
-                return FindPatternBmh(stringBuilder.ToString(), stringBuilder2.ToString(), startAddress);
+                else
+                {
+                    address = FindPatternBmh(pattern, mask, startAddress);
+                }
             }
-            return FindPatternBmh(stringBuilder.ToString(), stringBuilder2.ToString());
+            else
+            {
+                address = FindPatternBmh(pattern, mask);
+            }
+
+            // For script patterns, Logging is only done at the end of NativeMemory.FindPatternInScript,
+            // otherwise a "pattern not found" warning would be logged for every script codePage.
+            if (address == null && !isScriptPattern)
+            {
+                LogMemPatternNotFound(pattern, mask, startAddress, size);
+            }
+
+            return address;
         }
 
-        [Conditional("DEBUG")]
         private static void LogMemPatternNotFound(string pattern, string mask, IntPtr startAddr, ulong searchSize)
         {
             string patternFormatted = pattern.ToCharArray().Aggregate(new StringBuilder("\"", pattern.Length * 3 + 2),
                     (a, b) => a.Append(((byte)b).ToString("X2")).Append(" "),
                     (a) => a.Remove(a.Length - 1, 1).Append("\"").ToString());
 
+            string startAddrString = (startAddr == IntPtr.Zero) ? "" : $" , Start Address: 0x{startAddr.ToString("X")}";
+            string searchSizeString = (searchSize == 0) ? "" : $" , Search Size: 0x{searchSize.ToString("X")}";
             Log.Message(Log.Level.Warning, $"Memory pattern not found. " +
-                $"Pattern: {patternFormatted}, Mask: {mask}, Start Address: 0x{startAddr.ToString("X")}, " +
-                $"Search Size: 0x{searchSize.ToString("X")}"
+                $"Pattern: {patternFormatted}, Mask: {mask}" +
+                startAddrString + searchSizeString + "."
                 );
         }
 
