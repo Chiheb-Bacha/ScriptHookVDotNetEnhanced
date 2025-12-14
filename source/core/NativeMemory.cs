@@ -1475,48 +1475,43 @@ namespace SHVDN
             // Find camera objects
             if (s_isEnhanced)
             {
-                address = MemScanner.FindPatternBmh("48 89 cb 48 8b 41 ? 8b 10 f2 0f 10 3d");
+                address = MemScanner.FindPatternBmh("48 89 c1 45 31 c0 e8 ? ? ? ? 90 48 83 c4 20 5b 5f 5e");
                 if (address != null)
                 {
-                    // The pattern is inside a function, which calls a function, which accesses the pool.
-                    address = (byte*)(*(int*)(address + 34) + address + 38);
-                    if (address != null)
+                    address -= 81;
+                    bool isInitialized = (*(byte*)(*(int*)(address + 3) + address + 7) & 1) != 0;
+                    ulong firstValue = *(ulong*)(*(int*)(address + 21) + address + 25);
+                    ulong secondValue = *(ulong*)(*(int*)(address + 10) + address + 14);
+                    var firstRol = *(byte*)(address + 17); // 0x1b
+                    var secondRol = *(byte*)(address + 31); // 0x20
+                    var andValue = *(byte*)(address + 34); // 0x1f
+                    var addValue = *(byte*)(address + 37); // 0x1
+                    var xorValue = *(byte*)(address + 46); // 0x3f
+                    s_cameraPoolAddress = (ulong*)0UL;
+                    if (isInitialized)
                     {
-                        bool isInitialized = (*(byte*)(*(int*)(address + 3) + address + 7) & 1) != 0;
-                        ulong firstValue = *(ulong*)(*(int*)(address + 21) + address + 25);
-                        ulong secondValue = *(ulong*)(*(int*)(address + 10) + address + 14);
-                        var firstRol = *(byte*)(address + 17); // 0x1b
-                        var secondRol = *(byte*)(address + 31); // 0x20
-                        var andValue = *(byte*)(address + 33); // 0x1f
-                        var addValue = *(byte*)(address + 36); // 0x1
-                        var xorValue = *(byte*)(address + 44); // 0x3f
-                        s_cameraPoolAddress = (ulong*)0UL;
-                        if (isInitialized)
-                        {
-                            var rax = secondValue;
-                            rax = Rol(rax, firstRol);
-                            var rsi = firstValue;
-                            rsi = rsi ^ rax;
-                            rsi = Rol(rsi, secondRol);
-                            var al = (byte)(rax & 0xFF);
-                            al = (byte)(al & andValue);
-                            rax = (rax & 0xFFFFFFFFFFFFFF00UL) | (ulong)al;
-                            var ecx = (int)((rax + (ulong)addValue) & 0xFFFFFFFF);
-                            var rdi = rsi;
-                            var cl = (byte)(ecx & 0xFF);
-                            rdi = rdi << cl;
-                            al = (byte)(al ^ xorValue);
-                            rax = (rax & 0xFFFFFFFFFFFFFF00UL) | (ulong)al;
-                            var eax = (int)(rax & 0xFFFFFFFF);
-                            ecx = eax;
-                            cl = (byte)(ecx & 0xFF);
-                            rsi = rsi >> cl;
-                            rsi = rsi | rdi;
-                            rsi = ~rsi;
-                            s_cameraPoolAddress = (ulong*)rsi;
-                        }
+                        var rax = secondValue;
+                        rax = Rol(rax, firstRol);
+                        var rsi = firstValue;
+                        rsi = rsi ^ rax;
+                        rsi = Rol(rsi, secondRol);
+                        var al = (byte)(rax & 0xFF);
+                        al = (byte)(al & andValue);
+                        rax = (rax & 0xFFFFFFFFFFFFFF00UL) | (ulong)al;
+                        var ecx = (int)((rax + (ulong)addValue) & 0xFFFFFFFF);
+                        var rdi = rsi;
+                        var cl = (byte)(ecx & 0xFF);
+                        rdi = rdi << cl;
+                        al = (byte)(al ^ xorValue);
+                        rax = (rax & 0xFFFFFFFFFFFFFF00UL) | (ulong)al;
+                        var eax = (int)(rax & 0xFFFFFFFF);
+                        ecx = eax;
+                        cl = (byte)(ecx & 0xFF);
+                        rsi = rsi >> cl;
+                        rsi = rsi | rdi;
+                        rsi = ~rsi;
+                        s_cameraPoolAddress = (ulong*)rsi;
                     }
-
                 }
             }
             else
@@ -2408,7 +2403,8 @@ namespace SHVDN
             }
             else
             {
-                address = MemScanner.FindPatternBmh("\x40\x84\x00\x74\x13\xE8\x00\x00\x00\x00\x48\x85\xC0\x75\x09\x38\x45\x57\x0F\x84", "xx?xxx????xxxxxxxxxx");
+                bool doSuppressLog = true;
+                address = MemScanner.FindPatternBmh("40 84 ? 74 13 E8 ? ? ? ? 48 85 C0 75 09 38 45 57 0F 84", doSuppressLog);
                 if (address != null)
                 {
                     // Find address to patch because some of the instructions are changed and offset differs between b1290 and b1180
@@ -2980,8 +2976,8 @@ namespace SHVDN
                     continue;
                 }
 
-                bool isScriptPattern = true;
-                address = MemScanner.FindPatternBmh(pattern, shopControllerHeader->GetCodePageAddress(i), (ulong)size, isScriptPattern);
+                bool doSuppressLog = true;
+                address = MemScanner.FindPatternBmh(pattern, shopControllerHeader->GetCodePageAddress(i), (ulong)size, doSuppressLog);
                 if (address == null)
                 {
                     continue;
@@ -4275,14 +4271,15 @@ namespace SHVDN
                         // That should still make it unique, while not being present in the older unknown version,
                         // since there, it ends with the offset and not our pattern bytes.
                         // This way we can know what offset to use without knowing the exact version that broke the old offset.
-                        address = MemScanner.FindPatternBmh("45 84 f6 74 ? f3 0f 59 0d ? ? ? ? f3 0f 10 83 ? ? ? ? f3 44 0f 10 8b ? ? ? ? f3 44 0f 5c ce f3 44 0f 59 f8");
+                        bool doSuppressLog = true;
+                        address = MemScanner.FindPatternBmh("45 84 f6 74 ? f3 0f 59 0d ? ? ? ? f3 0f 10 83 ? ? ? ? f3 44 0f 10 8b ? ? ? ? f3 44 0f 5c ce f3 44 0f 59 f8", doSuppressLog);
                         if (address != null)
                         {
                             CWheelTireWearRateOffset = *(int*)(address + 49); // 0x1f0
                         }
                         else
                         {
-                            address = MemScanner.FindPatternNaive("\x45\x84\xF6\x74\x08\xF3\x0F\x59\x0D\x00\x00\x00\x00\xF3\x0F\x10\x83", "xxxxxxxxx????xxxx");
+                            address = MemScanner.FindPatternBmh("45 84 F6 74 08 F3 0F 59 0D ? ? ? ? F3 0F 10 83");
                             if (address != null)
                             {
                                 CWheelTireWearRateOffset = *(int*)(address + 0x22); // 0x1f0
@@ -4419,10 +4416,13 @@ namespace SHVDN
                     }
                 } else
                 {
-                    address = MemScanner.FindPatternBmh("f3 0f 59 b6 ? ? ? ? 48 8b ce e8");
+                    // New pattern, as the one used in ceef40b can't be found in older game versions.
+                    // This finds an offset to the attribute just before EngineTorqueMultiplier, then offsets again (0x04) to get EngineTorqueMultiplierOffset
+                    // TODO: find a direct pattern
+                    address = MemScanner.FindPatternBmh("8b 86 ? ? ? ? a9 ? ? ? ? 74 ? a9");
                     if (address != null)
                     {
-                        EngineTorqueMultiplierOffset = *(int*)(address + 4); // 0x13a0
+                        EngineTorqueMultiplierOffset = *(int*)(address + 2) + 0x04; // 0x13a0 
                     }
                 }
                 

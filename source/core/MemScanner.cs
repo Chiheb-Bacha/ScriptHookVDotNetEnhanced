@@ -126,6 +126,7 @@ namespace SHVDN
                     {
                         if (i == 0)
                         {
+                            // LogMemPatternNotFound(pattern, mask, startAddress, size); // Uncomment if the game crashes without "pattern not found" messages logged. This way, you know that operations happening after the last logged pattern are the problem.
                             return curHeadAddress;
                         }
                     }
@@ -135,13 +136,11 @@ namespace SHVDN
             return null;
         }
 
-        public static unsafe byte* FindPatternBmh(string pattern) => FindPatternBmh(pattern, IntPtr.Zero, 0, false);
+        public static unsafe byte* FindPatternBmh(string pattern, bool doSuppressLog = false) => FindPatternBmh(pattern, IntPtr.Zero, 0, doSuppressLog);
 
-        public static unsafe byte* FindPatternBmh(string pattern, IntPtr startAddress) => FindPatternBmh(pattern, startAddress, 0, false);
-
-        public static unsafe byte* FindPatternBmh(string pattern, IntPtr startAddress, ulong size) => FindPatternBmh(pattern, startAddress, size, false);
+        public static unsafe byte* FindPatternBmh(string pattern, IntPtr startAddress, bool doSuppressLog = false) => FindPatternBmh(pattern, startAddress, 0, doSuppressLog);
         
-        public static unsafe byte* FindPatternBmh(string pattern, IntPtr startAddress, ulong size, bool isScriptPattern)
+        public static unsafe byte* FindPatternBmh(string pattern, IntPtr startAddress, ulong size, bool doSuppressLog = false)
         {
             string[] array = pattern.Split(' ');
             StringBuilder stringBuilder = new StringBuilder(array.Length);
@@ -188,7 +187,7 @@ namespace SHVDN
 
             // For script patterns, Logging is only done at the end of NativeMemory.FindPatternInScript,
             // otherwise a "pattern not found" warning would be logged for every script codePage.
-            if (address == null && !isScriptPattern)
+            if (address == null && !doSuppressLog)
             {
                 LogMemPatternNotFound(pattern, mask, startAddress, size);
             }

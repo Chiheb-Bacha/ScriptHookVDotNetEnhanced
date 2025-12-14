@@ -24,6 +24,10 @@ namespace GTA
         DriftGauntlet4 = 3933619103u,
         DriftJester = 2531693357u,
         DriftZr350 = 1923534526u,
-        DriftChavosv6 = 457814204u
+        DriftChavosv6 = 457814204u,
+        DriftKeitora = 2739875593u,
+        DriftSentinel2 = 3288768346u,
+        DriftRt3000 = 1730644782u,
+        DriftDominator9 = 3439117103u
     }
 }
