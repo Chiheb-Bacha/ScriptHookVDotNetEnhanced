@@ -2386,7 +2386,6 @@ namespace SHVDN
                 }
             }
 
-            // These 2 patches are done by trainers such as Simple Trainer, Menyoo, and Enhanced Native Trainer, but we try to do this if they are not done yet
             #region -- Bypass model requests block for some models --
 
             // This enables to spawn some drawable objects without a dedicated collision (e.g. prop_fan_palm_01a).
@@ -2432,16 +2431,6 @@ namespace SHVDN
                 }
             }
 
-            #endregion
-            #region -- Bypass is player model allowed to spawn checks --
-            address = s_isEnhanced ? MemScanner.FindPatternBmh("74 ? e8 ? ? ? ? 48 8b b0") : MemScanner.FindPatternBmh("40 53 48 83 ec ? e8 ? ? ? ? 48 8b d8 48 85 c0 74 ? 48 8b 10 48 8b c8 ff 52");
-            address = address != null ? (address + 28) : null;
-            if (address != null)
-            {
-                int bytesToWriteInstructions = s_isEnhanced ? 6 : 4;
-                byte[] nopBytes = Enumerable.Repeat((byte)0x90, bytesToWriteInstructions).ToArray();
-                Marshal.Copy(nopBytes, 0, new IntPtr(address), bytesToWriteInstructions);
-            }
             #endregion
 
             // Generate vehicle model list
