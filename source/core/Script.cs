@@ -16,7 +16,7 @@ namespace SHVDN
     {
         internal SemaphoreSlim _waitEvent;
         internal SemaphoreSlim _continueEvent;
-        internal readonly ConcurrentQueue<Tuple<bool, KeyEventArgs>> _keyboardEvents = new();
+        internal readonly ConcurrentQueue<KeyboardEvent> _keyboardEvents = new();
 
         private Thread _thread; // The thread hosting the execution of the script
 
@@ -397,17 +397,17 @@ namespace SHVDN
         internal void DoTick()
         {
             // Process keyboard events
-            while (_keyboardEvents.TryDequeue(out Tuple<bool, KeyEventArgs> ev))
+            while (_keyboardEvents.TryDequeue(out KeyboardEvent ev))
             {
                 try
                 {
-                    if (!ev.Item1)
+                    if (ev.IsDown)
                     {
-                        KeyUp?.Invoke(this, ev.Item2);
+                        KeyDown?.Invoke(this, ev.Args);
                     }
                     else
                     {
-                        KeyDown?.Invoke(this, ev.Item2);
+                        KeyUp?.Invoke(this, ev.Args);
                     }
                 }
                 catch (ThreadAbortException)
