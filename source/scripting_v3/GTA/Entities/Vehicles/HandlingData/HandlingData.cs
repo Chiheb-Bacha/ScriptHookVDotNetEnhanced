@@ -1588,7 +1588,7 @@ namespace GTA
         {
             get
             {
-                IntPtr submarineHandlingDataAddress = GetSubHandlingData(HandlingType.Boat);
+                IntPtr submarineHandlingDataAddress = GetSubHandlingData(HandlingType.Submarine);
                 return submarineHandlingDataAddress != IntPtr.Zero ? new SubmarineHandlingData(submarineHandlingDataAddress, this) : null;
             }
         }
