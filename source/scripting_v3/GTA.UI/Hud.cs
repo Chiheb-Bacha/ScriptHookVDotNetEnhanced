@@ -118,7 +118,7 @@ namespace GTA.UI
         /// <summary>
         /// Gets whether bigmap (expanded radar) is active.
         /// </summary>
-        public static bool GetIsBigMapActive()
+        public static bool IsBigMapActive()
         {
             return SHVDN.NativeMemory.IsBigMapActive;
         }
