@@ -2412,6 +2412,38 @@ namespace SHVDN
                 s_isBigMapActiveAddress = (byte*)(*(int*)(address + 2) + address + 7);
             }
 
+            #region -- Allow orbital cannon explosions in SP patch --
+
+            if (s_isEnhanced)
+            {
+                while (true)
+                {
+                    // This pattern gives us 3 matches, all of which are relevant.
+                    // 2 could be found with 1 pattern (replacing the 3rd byte in the current pattern with ff), and the 3rd with another (3rd byte is fe).
+                    // This spares us the use of 3 different patterns.
+                    // Since we patch the byte at index 4 (0 indexed), each iteration of the loop will consume a match so that it can't be found again, and the loop terminates.
+                    address = MemScanner.FindPatternBmh("41 83 ? ? 75 ? 48 89 c7");
+                    if (address != null)
+                    {
+                        *(address + 4) = 0xEB; // JMP instead of JNZ
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                address = MemScanner.FindPatternBmh("48 8b f8 83 fb ? 75 ? 4c 8b 00");
+                if (address != null)
+                {
+                    *(address + 6) = 0xEB;
+                }
+            }
+
+            #endregion
+
             #region -- Bypass model requests block for some models --
 
             // This enables to spawn some drawable objects without a dedicated collision (e.g. prop_fan_palm_01a).

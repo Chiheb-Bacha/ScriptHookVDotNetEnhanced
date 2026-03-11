@@ -599,7 +599,7 @@ namespace GTA
 
                 return SHVDN.MemDataMarshal.IsBitSet(address + 0x20, 18);
             }
-            set => Function.Call(Hash.SHOW_HEADING_INDICATOR_ON_BLIP, Handle, value);
+            set => Function.Call(Hash.SHOW_OUTLINE_INDICATOR_ON_BLIP, Handle, value);
         }
 
         /// <summary>
