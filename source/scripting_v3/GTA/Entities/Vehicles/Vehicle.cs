@@ -19,6 +19,7 @@ namespace GTA
         #region Fields
         VehicleDoorCollection _doors;
         VehicleModCollection _mods;
+        VehicleExtraCollection _extras;
         VehicleWheelCollection _wheels;
         VehicleWindowCollection _windows;
         #endregion
@@ -114,6 +115,11 @@ namespace GTA
 
         public VehicleWindowCollection Windows => _windows ??= new VehicleWindowCollection(this);
 
+        /// <summary>
+        /// Gets the <see cref="VehicleExtraCollection"/> for this <see cref="Vehicle"/>.
+        /// </summary>
+        public VehicleExtraCollection Extras => _extras ??= new VehicleExtraCollection(this);
+
         public void Wash()
         {
             DirtLevel = 0f;
@@ -132,21 +138,6 @@ namespace GTA
             GameVersionNotSupportedException.ThrowIfNotSupported(VersionConstsForGameVersion.v1_0_505_2, nameof(Vehicle), nameof(SetHydraulicsControl));
 
             Function.Call(Hash.SET_HYDRAULICS_CONTROL, Handle, toggle);
-        }
-
-        public bool IsExtraOn(int extra)
-        {
-            return Function.Call<bool>(Hash.IS_VEHICLE_EXTRA_TURNED_ON, Handle, extra);
-        }
-
-        public bool ExtraExists(int extra)
-        {
-            return Function.Call<bool>(Hash.DOES_EXTRA_EXIST, Handle, extra);
-        }
-
-        public void ToggleExtra(int extra, bool toggle)
-        {
-            Function.Call(Hash.SET_VEHICLE_EXTRA, Handle, extra, !toggle);
         }
 
         /// <summary>
@@ -173,6 +164,28 @@ namespace GTA
         /// </para>
         /// </param>
         public void ForceUseAudioGameObject(string gameObjectName) => Function.Call(Hash.FORCE_USE_AUDIO_GAME_OBJECT, Handle, gameObjectName);
+
+        #endregion
+
+        #region Extras
+
+        [Obsolete("Use Vehicle.Extras[VehicleExtraIndex].Enabled instead!")]
+        public bool IsExtraOn(int extra)
+        {
+            return Function.Call<bool>(Hash.IS_VEHICLE_EXTRA_TURNED_ON, Handle, extra);
+        }
+
+        [Obsolete("Use Vehicle.Extras[VehicleExtraIndex].Exists() instead!")]
+        public bool ExtraExists(int extra)
+        {
+            return Function.Call<bool>(Hash.DOES_EXTRA_EXIST, Handle, extra);
+        }
+
+        [Obsolete("Use Vehicle.Extras[VehicleExtraIndex].Enabled instead!")]
+        public void ToggleExtra(int extra, bool toggle)
+        {
+            Function.Call(Hash.SET_VEHICLE_EXTRA, Handle, extra, !toggle);
+        }
 
         #endregion
 

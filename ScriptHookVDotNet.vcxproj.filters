@@ -14,6 +14,7 @@
     <CsCompile Include="source\core\MemScanner.cs" />
     <CsCompile Include="source\core\Hooking.cs" />
     <CsCompile Include="source\core\ScrWeaponHudStats.cs" />
+    <CsCompile Include="source\core\KeyboardEvent.cs" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\core\DllMain.cpp" />
