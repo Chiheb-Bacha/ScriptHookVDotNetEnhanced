@@ -34,7 +34,7 @@ namespace GTA
         {
             get
             {
-                if (!IsValid || Game.FileVersion < VersionConstsForGameVersion.v1_0_1365_1)
+                if (!IsValid || Game.FileVersion < ExeVersionConsts.v1_0_1365_1)
                 {
                     return 0.0f;
                 }
@@ -43,9 +43,9 @@ namespace GTA
             }
             set
             {
-                if (Game.FileVersion < VersionConstsForGameVersion.v1_0_1365_1)
+                if (Game.FileVersion < ExeVersionConsts.v1_0_1365_1)
                 {
-                    GameVersionNotSupportedException.ThrowIfNotSupported(VersionConstsForGameVersion.v1_0_1365_1, nameof(CarHandlingData), nameof(ToeFront));
+                    GameVersionNotSupportedException.ThrowIfNotSupported(ExeVersionConsts.v1_0_1365_1, nameof(CarHandlingData), nameof(ToeFront));
                 }
 
                 if (!IsValid)
@@ -67,7 +67,7 @@ namespace GTA
         {
             get
             {
-                if (!IsValid || Game.FileVersion < VersionConstsForGameVersion.v1_0_1365_1)
+                if (!IsValid || Game.FileVersion < ExeVersionConsts.v1_0_1365_1)
                 {
                     return 0.0f;
                 }
@@ -76,9 +76,9 @@ namespace GTA
             }
             set
             {
-                if (Game.FileVersion < VersionConstsForGameVersion.v1_0_1365_1)
+                if (Game.FileVersion < ExeVersionConsts.v1_0_1365_1)
                 {
-                    GameVersionNotSupportedException.ThrowIfNotSupported((VersionConstsForGameVersion.v1_0_1365_1), nameof(CarHandlingData), nameof(ToeRear));
+                    GameVersionNotSupportedException.ThrowIfNotSupported((ExeVersionConsts.v1_0_1365_1), nameof(CarHandlingData), nameof(ToeRear));
                 }
 
                 if (!IsValid)
@@ -100,7 +100,7 @@ namespace GTA
         {
             get
             {
-                if (!IsValid || Game.FileVersion < VersionConstsForGameVersion.v1_0_1365_1)
+                if (!IsValid || Game.FileVersion < ExeVersionConsts.v1_0_1365_1)
                 {
                     return 0.0f;
                 }
@@ -109,9 +109,9 @@ namespace GTA
             }
             set
             {
-                if (Game.FileVersion < VersionConstsForGameVersion.v1_0_1365_1)
+                if (Game.FileVersion < ExeVersionConsts.v1_0_1365_1)
                 {
-                    GameVersionNotSupportedException.ThrowIfNotSupported((VersionConstsForGameVersion.v1_0_1365_1), nameof(CarHandlingData), nameof(CamberFront));
+                    GameVersionNotSupportedException.ThrowIfNotSupported((ExeVersionConsts.v1_0_1365_1), nameof(CarHandlingData), nameof(CamberFront));
                 }
 
                 if (!IsValid)
@@ -133,7 +133,7 @@ namespace GTA
         {
             get
             {
-                if (!IsValid || Game.FileVersion < VersionConstsForGameVersion.v1_0_1365_1)
+                if (!IsValid || Game.FileVersion < ExeVersionConsts.v1_0_1365_1)
                 {
                     return 0.0f;
                 }
@@ -142,9 +142,9 @@ namespace GTA
             }
             set
             {
-                if (Game.FileVersion < VersionConstsForGameVersion.v1_0_1365_1)
+                if (Game.FileVersion < ExeVersionConsts.v1_0_1365_1)
                 {
-                    GameVersionNotSupportedException.ThrowIfNotSupported((VersionConstsForGameVersion.v1_0_1365_1), nameof(CarHandlingData), nameof(CamberRear));
+                    GameVersionNotSupportedException.ThrowIfNotSupported((ExeVersionConsts.v1_0_1365_1), nameof(CarHandlingData), nameof(CamberRear));
                 }
 
                 if (!IsValid)
@@ -166,7 +166,7 @@ namespace GTA
         {
             get
             {
-                if (!IsValid || Game.FileVersion < VersionConstsForGameVersion.v1_0_1365_1)
+                if (!IsValid || Game.FileVersion < ExeVersionConsts.v1_0_1365_1)
                 {
                     return 0.0f;
                 }
@@ -175,9 +175,9 @@ namespace GTA
             }
             set
             {
-                if (Game.FileVersion < VersionConstsForGameVersion.v1_0_1365_1)
+                if (Game.FileVersion < ExeVersionConsts.v1_0_1365_1)
                 {
-                    GameVersionNotSupportedException.ThrowIfNotSupported((VersionConstsForGameVersion.v1_0_1365_1), nameof(CarHandlingData), nameof(Castor));
+                    GameVersionNotSupportedException.ThrowIfNotSupported((ExeVersionConsts.v1_0_1365_1), nameof(CarHandlingData), nameof(Castor));
                 }
 
                 if (!IsValid)
@@ -199,7 +199,7 @@ namespace GTA
         {
             get
             {
-                if (!IsValid || Game.FileVersion < VersionConstsForGameVersion.v1_0_1365_1)
+                if (!IsValid || Game.FileVersion < ExeVersionConsts.v1_0_1365_1)
                 {
                     return 0.0f;
                 }
@@ -208,9 +208,9 @@ namespace GTA
             }
             set
             {
-                if (Game.FileVersion < VersionConstsForGameVersion.v1_0_1365_1)
+                if (Game.FileVersion < ExeVersionConsts.v1_0_1365_1)
                 {
-                    GameVersionNotSupportedException.ThrowIfNotSupported((VersionConstsForGameVersion.v1_0_1365_1), nameof(CarHandlingData), nameof(EngineResistance));
+                    GameVersionNotSupportedException.ThrowIfNotSupported((ExeVersionConsts.v1_0_1365_1), nameof(CarHandlingData), nameof(EngineResistance));
                 }
 
                 if (!IsValid)
@@ -229,7 +229,7 @@ namespace GTA
         {
             get
             {
-                if (!IsValid || Game.FileVersion < VersionConstsForGameVersion.v1_0_1365_1)
+                if (!IsValid || Game.FileVersion < ExeVersionConsts.v1_0_1365_1)
                 {
                     return 0.0f;
                 }
@@ -238,9 +238,9 @@ namespace GTA
             }
             set
             {
-                if (Game.FileVersion < VersionConstsForGameVersion.v1_0_1365_1)
+                if (Game.FileVersion < ExeVersionConsts.v1_0_1365_1)
                 {
-                    GameVersionNotSupportedException.ThrowIfNotSupported((VersionConstsForGameVersion.v1_0_1365_1), nameof(CarHandlingData), nameof(EngineResistance));
+                    GameVersionNotSupportedException.ThrowIfNotSupported((ExeVersionConsts.v1_0_1365_1), nameof(CarHandlingData), nameof(EngineResistance));
                 }
 
                 if (!IsValid)

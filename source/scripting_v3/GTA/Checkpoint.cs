@@ -170,7 +170,7 @@ namespace GTA
                     return System.Drawing.Color.Transparent;
                 }
 
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_877_1 ? 84 : 80; // TODO: Find this offset dynamically
+                int offset = Game.FileVersion >= ExeVersionConsts.v1_0_877_1 ? 84 : 80; // TODO: Find this offset dynamically
                 return System.Drawing.Color.FromArgb(SHVDN.MemDataMarshal.ReadInt32(address + offset));
             }
             set
@@ -181,7 +181,7 @@ namespace GTA
                     return;
                 }
 
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_877_1 ? 84 : 80; // TODO: Find this offset dynamically
+                int offset = Game.FileVersion >= ExeVersionConsts.v1_0_877_1 ? 84 : 80; // TODO: Find this offset dynamically
                 SHVDN.MemDataMarshal.WriteInt32(address + offset, value.ToArgb());
             }
         }
@@ -198,7 +198,7 @@ namespace GTA
                     return System.Drawing.Color.Transparent;
                 }
 
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_877_1 ? 88 : 84; // TODO: Find this offset dynamically
+                int offset = Game.FileVersion >= ExeVersionConsts.v1_0_877_1 ? 88 : 84; // TODO: Find this offset dynamically
                 return System.Drawing.Color.FromArgb(SHVDN.MemDataMarshal.ReadInt32(address + offset));
             }
             set
@@ -209,7 +209,7 @@ namespace GTA
                     return;
                 }
 
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_877_1 ? 88 : 84; // TODO: Find this offset dynamically
+                int offset = Game.FileVersion >= ExeVersionConsts.v1_0_877_1 ? 88 : 84; // TODO: Find this offset dynamically
                 SHVDN.MemDataMarshal.WriteInt32(address + offset, value.ToArgb());
             }
         }
@@ -227,7 +227,7 @@ namespace GTA
                     return 0.0f;
                 }
 
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_877_1 ? 80 : 76; // TODO: Find this offset dynamically
+                int offset = Game.FileVersion >= ExeVersionConsts.v1_0_877_1 ? 80 : 76; // TODO: Find this offset dynamically
                 return SHVDN.MemDataMarshal.ReadFloat(address + offset);
             }
             set
@@ -238,7 +238,7 @@ namespace GTA
                     return;
                 }
 
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_877_1 ? 80 : 76; // TODO: Find this offset dynamically
+                int offset = Game.FileVersion >= ExeVersionConsts.v1_0_877_1 ? 80 : 76; // TODO: Find this offset dynamically
                 SHVDN.MemDataMarshal.WriteFloat(address + offset, value);
             }
         }
@@ -255,7 +255,7 @@ namespace GTA
                     return 0.0f;
                 }
 
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_877_1 ? 72 : 68; // TODO: Find this offset dynamically
+                int offset = Game.FileVersion >= ExeVersionConsts.v1_0_877_1 ? 72 : 68; // TODO: Find this offset dynamically
                 return SHVDN.MemDataMarshal.ReadFloat(address + offset);
             }
             set
@@ -266,7 +266,7 @@ namespace GTA
                     return;
                 }
 
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_877_1 ? 72 : 68; // TODO: Find this offset dynamically
+                int offset = Game.FileVersion >= ExeVersionConsts.v1_0_877_1 ? 72 : 68; // TODO: Find this offset dynamically
                 SHVDN.MemDataMarshal.WriteFloat(address + offset, value);
             }
         }
@@ -283,7 +283,7 @@ namespace GTA
                     return 0.0f;
                 }
 
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_877_1 ? 76 : 72; // TODO: Find this offset dynamically
+                int offset = Game.FileVersion >= ExeVersionConsts.v1_0_877_1 ? 76 : 72; // TODO: Find this offset dynamically
                 return SHVDN.MemDataMarshal.ReadFloat(address + offset);
             }
             set
@@ -294,7 +294,7 @@ namespace GTA
                     return;
                 }
 
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_877_1 ? 76 : 72; // TODO: Find this offset dynamically
+                int offset = Game.FileVersion >= ExeVersionConsts.v1_0_877_1 ? 76 : 72; // TODO: Find this offset dynamically
                 SHVDN.MemDataMarshal.WriteFloat(address + offset, value);
             }
         }

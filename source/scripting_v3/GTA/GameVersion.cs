@@ -3,6 +3,9 @@
 // License: https://github.com/scripthookvdotnet/scripthookvdotnet#license
 //
 
+using System;
+using System.ComponentModel;
+
 namespace GTA
 {
     /// <summary>
@@ -128,11 +131,40 @@ namespace GTA
         v1_0_3323_0,
         v1_0_3337_0,
         v1_0_3351_0,
-        V1_0_3407_0,
-        V1_0_3411_0,
-        V1_0_3442_0,
-        V1_0_3504_0,
-        V1_0_3521_0,
-        V1_0_3570_0,
+        v1_0_3407_0,
+        v1_0_3411_0,
+        v1_0_3442_0,
+        v1_0_3504_0,
+        v1_0_3521_0,
+        v1_0_3570_0,
+        v1_0_3586_0,
+        v1_0_3717_0,
+        v1_0_3751_0,
+
+        // Enhanced builds
+        v2_0_811_8 = 1001,
+        v2_0_812_8,
+        v2_0_813_11,
+        v2_0_814_9,
+        v2_0_889_15,
+        v2_0_889_19,
+        v2_0_1013_17,
+
+        [Obsolete("Use v1_0_3407_0 instead.", false), EditorBrowsable(EditorBrowsableState.Never)]
+        V1_0_3407_0 = v1_0_3407_0,
+        [Obsolete("Use v1_0_3411_0 instead.", false), EditorBrowsable(EditorBrowsableState.Never)]
+        V1_0_3411_0 = v1_0_3411_0,
+        [Obsolete("Use v1_0_3442_0 instead.", false), EditorBrowsable(EditorBrowsableState.Never)]
+        V1_0_3442_0 = v1_0_3442_0,
+        [Obsolete("Use v1_0_3504_0 instead.", false), EditorBrowsable(EditorBrowsableState.Never)]
+        V1_0_3504_0 = v1_0_3504_0,
+        [Obsolete("Use v1_0_3521_0 instead.", false), EditorBrowsable(EditorBrowsableState.Never)]
+        V1_0_3521_0 = v1_0_3521_0,
+        [Obsolete("Use v1_0_3570_0 instead.", false), EditorBrowsable(EditorBrowsableState.Never)]
+        V1_0_3570_0 = v1_0_3570_0,
+        [Obsolete("Use v1_0_3586_0 instead.", false), EditorBrowsable(EditorBrowsableState.Never)]
+        V1_0_3586_0 = v1_0_3586_0,
+        [Obsolete("Use v1_0_3717_0 instead.", false), EditorBrowsable(EditorBrowsableState.Never)]
+        V1_0_3717_0 = v1_0_3717_0,
     }
 }

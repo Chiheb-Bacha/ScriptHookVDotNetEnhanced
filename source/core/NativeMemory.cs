@@ -2386,6 +2386,32 @@ namespace SHVDN
                 }
             }
 
+            if (s_isEnhanced)
+            {
+                address = MemScanner.FindPatternBmh("8b 3d ? ? ? ? 31 f6 85 ff 0f 84");
+            }
+            else
+            {
+                address = MemScanner.FindPatternBmh("8b 15 ? ? ? ? 85 d2 74 ? 40 38 35");
+            }
+            if (address != null)
+            {
+                s_radarZoomValueAddress = (int*)(*(int*)(address + 2) + address + 6);
+            }
+
+            if (s_isEnhanced)
+            {
+                address = MemScanner.FindPatternBmh("80 3d ? ? ? ? ? 74 ? 31 c0 80 3d");
+            }
+            else
+            {
+                address = MemScanner.FindPatternBmh("80 3d ? ? ? ? ? b8 ? ? ? ? 75");
+            }
+            if (address != null)
+            {
+                s_isBigMapActiveAddress = (byte*)(*(int*)(address + 2) + address + 7);
+            }
+
             #region -- Bypass model requests block for some models --
 
             // This enables to spawn some drawable objects without a dedicated collision (e.g. prop_fan_palm_01a).
@@ -7417,7 +7443,7 @@ namespace SHVDN
 
                 internal CPathNode* GetPathNode(uint nodeId)
                 {
-                    if (NodeArrayPtr == IntPtr.Zero && nodeId >= NodeCount)
+                    if (NodeArrayPtr == IntPtr.Zero || nodeId >= NodeCount)
                     {
                         return null;
                     }
@@ -7428,7 +7454,7 @@ namespace SHVDN
 
                 internal CPathNodeLink* GetPathNodeLink(uint index)
                 {
-                    if (NodeLinkArrayPtr == IntPtr.Zero && index >= NodeLinkCount)
+                    if (NodeLinkArrayPtr == IntPtr.Zero || index >= NodeLinkCount)
                     {
                         return null;
                     }
@@ -8106,6 +8132,44 @@ namespace SHVDN
             }
         }
 
+        #endregion
+
+        #region -- HUD Data --
+
+        private static int* s_radarZoomValueAddress;
+
+        // We should not add a write field for this, we can just use SET_RADAR_ZOOM,
+        // which also performs some other checks and sets more values.
+        public static int RadarZoomValue
+        {
+            get
+            {
+                if (s_radarZoomValueAddress == null)
+                {
+                    return 0;
+                }
+
+                // When SET_RADAR_ZOOM writes to this field, it is set to the desired value + 100 in both tested versions(b427 and b3586).
+                // It is less clear when looking at Enhanced, as the logic is in a jmp chain.
+                int tmp = *s_radarZoomValueAddress;
+                return tmp > 0 ? tmp - 100 : tmp;
+            }
+        }
+
+        private static byte* s_isBigMapActiveAddress;
+
+        public static bool IsBigMapActive
+        {
+            get
+            {
+                if (s_isBigMapActiveAddress == null)
+                {
+                    return false;
+                }
+
+                return *s_isBigMapActiveAddress != 0;
+            }
+        }
         #endregion
 
         #region -- Radar Blip Pool --
@@ -9308,7 +9372,7 @@ namespace SHVDN
             [FieldOffset(0x78)]
             internal GtaFragType* gtaFragType;
             [FieldOffset(0xB8)]
-            internal uint unkType;
+            internal uint guid;
 
             internal FragPhysicsLod* GetAppropriateFragPhysicsLod()
             {
@@ -9318,12 +9382,12 @@ namespace SHVDN
                     return null;
                 }
 
-                switch (unkType)
+                switch (guid)
                 {
                     case 0:
                     case 1:
                     case 2:
-                        return fragPhysicsLodGroup->GetFragPhysicsLodByIndex((int)unkType);
+                        return fragPhysicsLodGroup->GetFragPhysicsLodByIndex((int)guid);
                     default:
                         return fragPhysicsLodGroup->GetFragPhysicsLodByIndex(0);
                 }
@@ -9602,23 +9666,23 @@ namespace SHVDN
             }
         }
 
-        internal sealed class DetachFragmentPartByIndexTask : IScriptTask
+        internal sealed class FragInstBreakOffAboveTask : IScriptTask
         {
             #region Fields
             internal FragInst* _fragInst;
-            internal int _fragmentGroupIndex;
+            internal int _componentIndex;
             internal bool _wasNewFragInstCreated;
             #endregion
 
-            internal DetachFragmentPartByIndexTask(FragInst* fragInst, int fragmentGroupIndex)
+            internal FragInstBreakOffAboveTask(FragInst* fragInst, int componentIndex)
             {
                 this._fragInst = fragInst;
-                this._fragmentGroupIndex = fragmentGroupIndex;
+                this._componentIndex = componentIndex;
             }
 
             public void Run()
             {
-                _wasNewFragInstCreated = s_detachFragmentPartByIndexFunc(_fragInst, _fragmentGroupIndex) != null;
+                _wasNewFragInstCreated = s_detachFragmentPartByIndexFunc(_fragInst, _componentIndex) != null;
             }
         }
 
@@ -9658,7 +9722,7 @@ namespace SHVDN
                 return false;
             }
 
-            var task = new DetachFragmentPartByIndexTask(fragInst, fragmentGroupIndex);
+            var task = new FragInstBreakOffAboveTask(fragInst, fragmentGroupIndex);
             ScriptDomain.CurrentDomain.ExecuteTaskWithGameThreadTlsContext(task);
 
             return task._wasNewFragInstCreated;

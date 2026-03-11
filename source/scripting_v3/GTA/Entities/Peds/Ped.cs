@@ -134,7 +134,7 @@ namespace GTA
         /// </returns>
         public Ped CloneAlt(bool linkBlends = true, bool cloneCompressedDamage = true)
         {
-            GameVersionNotSupportedException.ThrowIfNotSupported(VersionConstsForGameVersion.v1_0_463_1, nameof(Ped),
+            GameVersionNotSupportedException.ThrowIfNotSupported(ExeVersionConsts.v1_0_463_1, nameof(Ped),
                 nameof(CloneAlt));
 
             const bool registerAsNetworkObject = true;
@@ -178,7 +178,7 @@ namespace GTA
         /// </param>
         public void CloneToTargetAlt(Ped target, bool cloneCompressedDamage = true)
         {
-            GameVersionNotSupportedException.ThrowIfNotSupported(VersionConstsForGameVersion.v1_0_463_1, nameof(Ped),
+            GameVersionNotSupportedException.ThrowIfNotSupported(ExeVersionConsts.v1_0_463_1, nameof(Ped),
                 nameof(CloneToTargetAlt));
 
             Function.Call(Hash.CLONE_PED_TO_TARGET_ALT, Handle, target, cloneCompressedDamage);
@@ -262,6 +262,57 @@ namespace GTA
         /// Sets a value that indicates whether this <see cref="Ped"/> is currently taking off their helmet.
         /// </summary>
         public bool IsTakingOffHelmet => Function.Call<bool>(Hash.IS_PED_TAKING_OFF_HELMET, Handle);
+
+        /// <summary>
+        /// Applies blood to this <see cref="Ped"/> at the specified world-space position.
+        /// </summary>
+        /// <param name="zone">The <see cref="PedDamageZone"/> to apply the effect to.</param>
+        /// <param name="position">The <see cref="Vector3"/> world-space position where the blood effect should appear on the ped.</param>
+        /// <param name="bloodDamage">The <see cref="PedBloodDamage"/> preset to apply.</param>
+        public void ApplyBloodDamage(PedDamageZone zone, Vector3 position, PedBloodDamage bloodDamage)
+        {
+            Function.Call(Hash.APPLY_PED_BLOOD, Handle, (int)zone, position.X, position.Y, position.Z, bloodDamage.ToInternalName());
+        }
+
+        /// <summary>
+        /// Applies blood to this <see cref="Ped"/> at a specified position within a damage zone.
+        /// </summary>
+        /// <param name="zone">The <see cref="PedDamageZone"/> to apply the effect to.</param>
+        /// <param name="position">
+        /// The normalized <see cref="Vector2"/> UV position within the damage zone where the blood effect should appear.
+        /// </param>
+        /// <param name="bloodDamage">The <see cref="PedBloodDamage"/> preset to apply.</param>
+        public void ApplyBloodDamage(PedDamageZone zone, Vector2 position, PedBloodDamage bloodDamage)
+        {
+            Function.Call(Hash.APPLY_PED_BLOOD_BY_ZONE, Handle, (int)zone, position.X, position.Y, bloodDamage.ToInternalName());
+        }
+
+        /// <summary>
+        /// Applies blood to this <see cref="Ped"/> at a specified position within a damage zone, with control over rotation, scale, frame, and age.
+        /// </summary>
+        /// <param name="zone">The <see cref="PedDamageZone"/> to apply the effect to.</param>
+        /// <param name="position">
+        /// The normalized <see cref="Vector2"/> UV position within the damage zone where the blood effect should appear.
+        /// <para>Values range from (0,0) at the bottom-left of the zone to (1,1) at the top-right.</para>
+        /// </param>
+        /// <param name="bloodDamage">The <see cref="PedBloodDamage"/> preset to apply.</param>
+        /// <param name="rotation">
+        /// The rotation angle in degrees to apply to the blood decal.
+        /// </param>
+        /// <param name="scale">
+        /// The scale factor of the blood decal. Typical range is 0.0f to 1.0f, based on the MinSize/MaxSize parameters in <c>peddamage.xml</c>.
+        /// </param>
+        /// <param name="frameIndex">
+        /// The frame of the blood decal to use.
+        /// When set to -1 (default), a random frame is chosen.
+        /// </param>
+        /// <param name="woundAge">
+        /// The age in seconds of the blood effect. A value of 0.0f generates a fresh wound, higher values simulate older blood.
+        /// </param>
+        public void ApplyBloodDamage(PedDamageZone zone, Vector2 position, PedBloodDamage bloodDamage, float rotation, float scale, int frameIndex = -1, float woundAge = 0.0f)
+        {
+            Function.Call(Hash.APPLY_PED_BLOOD_SPECIFIC, Handle, (int)zone, position.X, position.Y, rotation, scale, frameIndex, woundAge);
+        }
 
         public void ClearBloodDamage()
         {
@@ -2732,7 +2783,7 @@ namespace GTA
         {
             if (modifier < 0 || (int)modifier >= SpeechModifierHelpers.s_modiferCount)
             {
-                ThrowHelper.ArgumentOutOfRangeException_Enum_Value(nameof(modifier));
+                ThrowHelper.ThrowEnumArgumentOutOfRangeException(nameof(modifier));
             }
 
             Function.Call(Hash.PLAY_PED_AMBIENT_SPEECH_NATIVE, Handle, speechName, modifier.GetInternalName());
@@ -2741,7 +2792,7 @@ namespace GTA
         {
             if (modifier < 0 || (int)modifier >= SpeechModifierHelpers.s_modiferCount)
             {
-                ThrowHelper.ArgumentOutOfRangeException_Enum_Value(nameof(modifier));
+                ThrowHelper.ThrowEnumArgumentOutOfRangeException(nameof(modifier));
             }
 
             Function.Call(Hash.PLAY_PED_AMBIENT_SPEECH_WITH_VOICE_NATIVE, Handle, speechName, voiceName, modifier.GetInternalName(), 0);
@@ -2827,6 +2878,75 @@ namespace GTA
                 }
             }
         }
+
+        /// <summary>
+        /// Overrides the facial idle animation for this <see cref="Ped"/> with the specified <see cref="CrClipAsset"/>.
+        /// </summary>
+        /// <param name="clipAsset">The <see cref="CrClipAsset"/> to use as the facial idle animation.</param>
+        /// <remarks>
+        /// <b>Note:</b> If the <see cref="CrClipDictionary"/> of the specified <see cref="CrClipAsset"/> is not suitable for this <see cref="Ped"/>, this method will have no effect.
+        /// </remarks>
+        public void SetFacialIdleAnimationOverride(CrClipAsset clipAsset)
+            => Function.Call(Hash.SET_FACIAL_IDLE_ANIM_OVERRIDE, Handle, clipAsset.ClipName, clipAsset.ClipDictionary.Name);
+
+        /// <summary>
+        /// Overrides the facial idle animation for this <see cref="Ped"/> with the specified animation name, using the current facial animation <see cref="ClipSet"/> of this <see cref="Ped"/>.
+        /// </summary>
+        /// <param name="animName">The name of the facial idle animation to apply.</param>
+        /// <remarks>
+        /// <b>Note:</b> If the current facial animation <see cref="ClipSet"/> of this <see cref="Ped"/> does not contain the specified animation, the override will not take effect.
+        /// </remarks>
+        public void SetFacialIdleAnimationOverride(string animName)
+            => Function.Call(Hash.SET_FACIAL_IDLE_ANIM_OVERRIDE, Handle, animName, null);
+
+        /// <summary>
+        /// Overrides the facial idle animation for this <see cref="Ped"/> with the specified animation, using the current facial animation <see cref="ClipSet"/> of this <see cref="Ped"/>.
+        /// </summary>
+        /// <param name="anim">The facial idle animation to apply.</param>
+        public void SetFacialIdleAnimationOverride(CommonPedFacialAnimation anim)
+            => SetFacialIdleAnimationOverride(anim.GetAnimationName());
+
+        /// <summary>
+        /// Sets the facial clipset this <see cref="Ped"/> should use.
+        /// </summary>
+        /// <param name="clipSet">The <see cref="ClipSet"/> to use.</param>
+        /// <remarks>The specified <see cref="ClipSet"/> must be loaded before calling this method.</remarks>
+        public void SetFacialClipset(ClipSet clipSet)
+            => Function.Call(Hash.SET_FACIAL_CLIPSET, Handle, clipSet.Name);
+
+        /// <summary>
+        /// Plays the specified facial animation on this <see cref="Ped"/>.
+        /// </summary>
+        /// <param name="clipAsset">The <see cref="CrClipAsset"/> to use as the facial animation.</param>
+        /// <remarks>
+        /// <para><b>Note:</b> If the <see cref="CrClipDictionary"/> of the specified <see cref="CrClipAsset"/> is not suitable for this <see cref="Ped"/>, this method will have no effect.</para>
+        /// The specified <see cref="CrClipAsset"/> must be loaded before calling this method, or the animation will not play.
+        /// </remarks>
+        public void PlayFacialAnimation(CrClipAsset clipAsset)
+            => Function.Call(Hash.PLAY_FACIAL_ANIM, Handle, clipAsset.ClipName, clipAsset.ClipDictionary.Name);
+
+        /// <summary>
+        /// Plays the specified facial animation for this <see cref="Ped"/>, using the current facial animation <see cref="ClipSet"/> of this <see cref="Ped"/>.
+        /// </summary>
+        /// <param name="animName">The name of the facial animation to apply.</param>
+        /// <remarks>
+        /// <b>Note:</b> If the current facial animation <see cref="ClipSet"/> of this <see cref="Ped"/> does not contain the specified animation, this method will have no effect.
+        /// </remarks>
+        public void PlayFacialAnimation(string animName)
+            => Function.Call(Hash.PLAY_FACIAL_ANIM, Handle, animName, null);
+
+        /// <summary>
+        /// Plays the specified facial animation for this <see cref="Ped"/>, using the current facial animation <see cref="ClipSet"/> of this <see cref="Ped"/>.
+        /// </summary>
+        /// <param name="anim">The facial animation to apply.</param>
+        public void PlayFacialAnimation(CommonPedFacialAnimation anim)
+            => PlayFacialAnimation(anim.GetAnimationName());
+
+        /// <summary>
+        /// Clears any facial idle animation override set on this <see cref="Ped"/> and restores the default facial idle animation.
+        /// </summary>
+        public void ClearFacialIdleAnimationOverride()
+            => Function.Call(Hash.CLEAR_FACIAL_IDLE_ANIM_OVERRIDE, Handle);
 
         /// <summary>
         /// Sets the movement clipset this <see cref="Ped"/> should use.
@@ -2976,7 +3096,7 @@ namespace GTA
             // The native doesn't check the current frag type child count when access to the frag type child for the corresponding component index if the entity is ped
             if ((int)component < (int)RagdollComponent.Buttocks || (int)component > (int)RagdollComponent.Head)
             {
-                ThrowHelper.ArgumentOutOfRangeException_Enum_Value(nameof(component));
+                ThrowHelper.ThrowEnumArgumentOutOfRangeException(nameof(component));
             }
 
             Function.Call(Hash.APPLY_FORCE_TO_ENTITY, Handle, (int)forceType, force.X, force.Y, force.Z, offset.X, offset.Y, offset.Z, (int)component, relativeForce, relativeOffset, scaleByMass, triggerAudio, scaleByTimeScale);
@@ -3034,7 +3154,7 @@ namespace GTA
             // The native doesn't check the current frag type child count when access to the frag type child for the corresponding component index if the entity is ped
             if ((int)component < (int)RagdollComponent.Buttocks || (int)component > (int)RagdollComponent.Head)
             {
-                ThrowHelper.ArgumentOutOfRangeException_Enum_Value(nameof(component));
+                ThrowHelper.ThrowEnumArgumentOutOfRangeException(nameof(component));
             }
 
             Function.Call(Hash.APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS, Handle, (int)forceType, force.X, force.Y, force.Z, (int)component, relativeForce, scaleByMass, applyToChildren);

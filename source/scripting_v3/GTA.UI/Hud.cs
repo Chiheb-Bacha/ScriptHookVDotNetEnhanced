@@ -5,6 +5,7 @@
 
 using GTA.Math;
 using GTA.Native;
+using SHVDN;
 
 namespace GTA.UI
 {
@@ -100,14 +101,36 @@ namespace GTA.UI
         public static void UnlockRadarPosition() => Function.Call(Hash.UNLOCK_MINIMAP_POSITION);
 
         /// <summary>
-        /// Sets how far the minimap should be zoomed in.
+        /// Gets or sets how far the minimap should be zoomed in.
         /// </summary>
         /// <value>
         /// The radar zoom; accepts values from 0 to 200.
         /// </value>
+        /// <remarks>
+        /// If bigmap is enabled, the max value is 6000; otherwise 1500.
+        /// </remarks>
         public static int RadarZoom
         {
+            get => SHVDN.NativeMemory.RadarZoomValue;
             set => Function.Call(Hash.SET_RADAR_ZOOM, value);
+        }
+
+        /// <summary>
+        /// Gets whether bigmap (expanded radar) is active.
+        /// </summary>
+        public static bool GetIsBigMapActive()
+        {
+            return SHVDN.NativeMemory.IsBigMapActive;
+        }
+
+        /// <summary>
+        /// Activates or deactivates bigmap (expanded radar).
+        /// </summary>
+        /// <param name="toggleBigMap"><see langword="true"/> to enable bigmap; <see langword="false"/> to disable it.</param>
+        /// <param name="showFullMap"><see langword="true"/> to show the full map.</param>
+        public static void SetBigMapActive(bool toggleBigMap, bool showFullMap)
+        {
+            Function.Call(Hash.SET_BIGMAP_ACTIVE, toggleBigMap, showFullMap);
         }
     }
 }

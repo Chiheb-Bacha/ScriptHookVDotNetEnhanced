@@ -1456,7 +1456,7 @@ namespace GTA
                     return 0.0f;
                 }
 
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_1180_2 ? 0x168 : 0x160; // TODO: Find this offset dynamically
+                int offset = Game.FileVersion >= ExeVersionConsts.v1_0_1180_2 ? 0x168 : 0x160; // TODO: Find this offset dynamically
                 return SHVDN.MemDataMarshal.ReadFloat(MemoryAddress + offset);
             }
             set
@@ -1466,7 +1466,7 @@ namespace GTA
                     return;
                 }
 
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_1180_2 ? 0x168 : 0x160; // TODO: Find this offset dynamically
+                int offset = Game.FileVersion >= ExeVersionConsts.v1_0_1180_2 ? 0x168 : 0x160; // TODO: Find this offset dynamically
                 SHVDN.MemDataMarshal.WriteFloat(MemoryAddress + offset, value);
             }
         }
@@ -1483,7 +1483,7 @@ namespace GTA
                 {
                     return 0;
                 }
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_1180_2 ? 0x13C : 0x134; // TODO: Find this offset dynamically
+                int offset = Game.FileVersion >= ExeVersionConsts.v1_0_1180_2 ? 0x13C : 0x134; // TODO: Find this offset dynamically
                 return (AIHandlingHash)SHVDN.MemDataMarshal.ReadUInt32(MemoryAddress + offset);
             }
             private set // This is private, as it has no effect if changed alone. It should be changed when changing CAIHandlingInfo 
@@ -1492,7 +1492,7 @@ namespace GTA
                 {
                     return;
                 }
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_1180_2 ? 0x13C : 0x134; // TODO: Find this offset dynamically
+                int offset = Game.FileVersion >= ExeVersionConsts.v1_0_1180_2 ? 0x13C : 0x134; // TODO: Find this offset dynamically
                 SHVDN.MemDataMarshal.WriteUInt32(MemoryAddress + offset, (uint)value);
             }
         }
@@ -1507,7 +1507,7 @@ namespace GTA
                 {
                     return null;
                 }
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_1180_2 ? NativeMemory.s_AIHandlingInfoInHandlingInfoOffset : 0x148; // 0x150
+                int offset = Game.FileVersion >= ExeVersionConsts.v1_0_1180_2 ? NativeMemory.s_AIHandlingInfoInHandlingInfoOffset : 0x148; // 0x150
                 return new CAIHandlingInfo(SHVDN.MemDataMarshal.ReadAddress(MemoryAddress + offset));
             }
             set
@@ -1520,7 +1520,7 @@ namespace GTA
                 {
                     return;
                 }
-                int offset = Game.FileVersion >= VersionConstsForGameVersion.v1_0_1180_2 ? NativeMemory.s_AIHandlingInfoInHandlingInfoOffset : 0x148; // 0x150
+                int offset = Game.FileVersion >= ExeVersionConsts.v1_0_1180_2 ? NativeMemory.s_AIHandlingInfoInHandlingInfoOffset : 0x148; // 0x150
                 SHVDN.MemDataMarshal.WriteAddress(MemoryAddress + offset, value.MemoryAddress);
                 AIHandlingHash = value.NameHash;
             }
