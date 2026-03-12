@@ -20,6 +20,7 @@ using System.CodeDom;
 using System.Net;
 using System.Runtime.Remoting.Messaging;
 using System.Collections.Concurrent;
+using System.Collections;
 
 namespace SHVDN
 {
@@ -2412,37 +2413,19 @@ namespace SHVDN
                 s_isBigMapActiveAddress = (byte*)(*(int*)(address + 2) + address + 7);
             }
 
-            #region -- Allow orbital cannon explosions in SP patch --
-
             if (s_isEnhanced)
             {
-                while (true)
-                {
-                    // This pattern gives us 3 matches, all of which are relevant.
-                    // 2 could be found with 1 pattern (replacing the 3rd byte in the current pattern with ff), and the 3rd with another (3rd byte is fe).
-                    // This spares us the use of 3 different patterns.
-                    // Since we patch the byte at index 4 (0 indexed), each iteration of the loop will consume a match so that it can't be found again, and the loop terminates.
-                    address = MemScanner.FindPatternBmh("41 83 ? ? 75 ? 48 89 c7");
-                    if (address != null)
-                    {
-                        *(address + 4) = 0xEB; // JMP instead of JNZ
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
+                address = MemScanner.FindPatternBmh("48 8d 2d ? ? ? ? 45 31 ed 4c 8b 3d");
             }
             else
             {
-                address = MemScanner.FindPatternBmh("48 8b f8 83 fb ? 75 ? 4c 8b 00");
-                if (address != null)
-                {
-                    *(address + 6) = 0xEB;
-                }
+                address = MemScanner.FindPatternBmh("48 8d 05 ? ? ? ? 48 89 4c 24 ? 48 63 cd");
             }
-
-            #endregion
+            if (address != null)
+            {
+                s_minimapArrayAddress = (MinimapData*)(*(int*)(address + 3) + address + 7);
+            }
+            populateMiniMapComponentDataDict();
 
             #region -- Bypass model requests block for some models --
 
@@ -8200,6 +8183,102 @@ namespace SHVDN
                 }
 
                 return *s_isBigMapActiveAddress != 0;
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        unsafe struct MinimapData
+        {
+            public fixed byte name[100];
+            public float posX;
+            public float posY;
+            public float sizeX;
+            public float sizeY;
+            public byte alignX;
+            public byte alignY;
+
+		    private fixed byte pad[2];
+        };
+
+        // Couldn't find this specified in the code, but once you create the struct and propagate it across the array, you get 11 elements.
+        // It can also be determined by looking at frontend.xml
+        private static byte minimapArraySize = 11;
+
+        private static MinimapData* s_minimapArrayAddress;
+
+        private static Dictionary<string, IntPtr> minimapComponents = new Dictionary<string, IntPtr>(minimapArraySize);
+
+        public static void SetMinimapComponentData(string name, byte alignX, byte alignY, float posX, float posY, float sizeX, float sizeY)
+        {
+            IntPtr minimapComponentDataPtr = GetMinimapComponentDataPtr(name);
+            SetMinimapComponentData(minimapComponentDataPtr, alignX, alignY, posX, posY, sizeX, sizeY);
+        }
+
+        public static void SetMinimapComponentData(IntPtr minimapComponentDataPtr, byte alignX, byte alignY, float posX, float posY, float sizeX, float sizeY)
+        {
+            if (minimapComponentDataPtr == IntPtr.Zero)
+                return;
+
+            MinimapData* component = (MinimapData*)minimapComponentDataPtr;
+            component->alignX = alignX;
+            component->alignY = alignY;
+            component->posX = posX;
+            component->posY = posY;
+            component->sizeX = sizeX;
+            component->sizeY = sizeY;
+        }
+
+        public static IntPtr GetMinimapComponentData(string name, out byte alignX, out byte alignY, out float posX,
+            out float posY, out float sizeX, out float sizeY)
+        {
+            IntPtr minimapComponentDataPtr = GetMinimapComponentDataPtr(name);
+            GetMinimapComponentData(minimapComponentDataPtr, out alignX, out alignY, out posX, out posY, out sizeX, out sizeY);
+            return minimapComponentDataPtr;
+        }
+
+        public static void GetMinimapComponentData(IntPtr minimapComponentDataPtr, out byte alignX, out byte alignY, out float posX,
+            out float posY, out float sizeX, out float sizeY)
+        {
+            if (minimapComponentDataPtr == IntPtr.Zero)
+            {
+                alignX = 0;
+                alignY = 0;
+                posX = 0.0f;
+                posY = 0.0f;
+                sizeX = 0.0f;
+                sizeY = 0.0f;
+                return;
+            }
+
+            MinimapData* component = (MinimapData*)minimapComponentDataPtr;
+            alignX = component->alignX;
+            alignY = component->alignY;
+            posX = component->posX;
+            posY = component->posY;
+            sizeX = component->sizeX;
+            sizeY = component->sizeY;
+        }
+
+        public static IntPtr GetMinimapComponentDataPtr(string name)
+        {
+            if (s_minimapArrayAddress == null)
+                return IntPtr.Zero;
+
+            minimapComponents.TryGetValue(name, out IntPtr componentPtr);
+            return componentPtr;
+        }
+
+        private static void populateMiniMapComponentDataDict()
+        {
+            for (byte i = 0; i < minimapArraySize; i++)
+            {
+                var component = &s_minimapArrayAddress[i];
+
+                byte* pName = component->name;
+                string nameStr = StringMarshal.PtrToStringUtf8((IntPtr)pName);
+
+                IntPtr componentPtr = (IntPtr)component;
+                minimapComponents.Add(nameStr, componentPtr);
             }
         }
         #endregion

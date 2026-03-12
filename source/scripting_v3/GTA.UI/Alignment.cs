@@ -14,4 +14,20 @@ namespace GTA.UI
         Left = 1,
         Right = 2,
     }
+
+    public enum AlignX : byte
+    {
+        Center = (byte)'C',
+        Left = (byte)'L',
+        Right = (byte)'R',
+        Invalid = (byte)'I',
+    }
+
+    public enum AlignY : byte
+    {
+        Center = (byte)'C',
+        Top = (byte)'T',
+        Bottom = (byte)'B',
+        Invalid = (byte)'I',
+    }
 }
