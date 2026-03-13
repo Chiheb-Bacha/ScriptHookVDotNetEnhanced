@@ -2218,6 +2218,9 @@ namespace GTA
         /// <param name="invisible">If set to <see langword="true" />, explosion will not create particle effects.</param>
         public static void AddExplosion(Vector3 position, ExplosionType type, float radius, float cameraShake, Ped owner = null, bool aubidble = true, bool invisible = false)
         {
+
+            SHVDN.NativeMemory.SpoofScriptNameHashPtr(0x6c25dccb);
+
             if (owner?.Exists() == true)
             {
                 Function.Call(Hash.ADD_OWNED_EXPLOSION,
@@ -2243,6 +2246,8 @@ namespace GTA
                     invisible,
                     cameraShake);
             }
+
+            SHVDN.NativeMemory.RestoreOriginalScriptNameHashPtr();
         }
 
         /// <summary>

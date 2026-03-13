@@ -2427,6 +2427,33 @@ namespace SHVDN
             }
             populateMiniMapComponentDataDict();
 
+            if (s_isEnhanced)
+            {
+                address = MemScanner.FindPatternBmh("48 8d 7e ? c7 46 ? 00 00 00 00 c6 46"); // 0x60
+            }
+            else
+            {
+                address = MemScanner.FindPatternBmh("48 8d 77 ? 48 8d 05 ? ? ? ? 48 8b d3"); // 0x60
+            }
+            if (address != null)
+            {
+                s_scriptIdInGameScriptHandlerOffset = *(address + 3);
+            }
+
+            if (s_isEnhanced)
+            {
+                address = MemScanner.FindPatternBmh("89 5e ? 75 ? 84 c0 75"); // 0x08
+            }
+            else
+            {
+                address = MemScanner.FindPatternBmh("89 4b ? 84 c0 74 ? 48 8b 03"); // 0x08
+            }
+            if (address != null)
+            {
+                s_scriptNameHashInScriptIdOffset = *(address + 2);
+            }
+            InitScriptNameHashPtr();
+
             #region -- Bypass model requests block for some models --
 
             // This enables to spawn some drawable objects without a dedicated collision (e.g. prop_fan_palm_01a).
@@ -8558,6 +8585,62 @@ namespace SHVDN
 
                 // _result should have the result address or null if not found
             }
+        }
+
+        static int* scriptNameHashPtr;
+        static int originalScriptNameHash = 0;
+        static byte s_scriptIdInGameScriptHandlerOffset;
+        static byte s_scriptNameHashInScriptIdOffset;
+
+        internal sealed class GetCScriptNameHashAddrTask : IScriptTask
+        {
+            internal GetCScriptNameHashAddrTask() {}
+
+            public void Run()
+            {
+                ulong cGameScriptHandlerAddress = s_getCGameScriptHandlerAddressFunc();
+
+                if (cGameScriptHandlerAddress == 0)
+                {
+                    return;
+                }
+
+                // This is equivalent to vfunc[5] of cGameScriptHandler
+                byte* scriptId = (byte*)(cGameScriptHandlerAddress + s_scriptIdInGameScriptHandlerOffset);
+
+                // This is equivalent to vfunc[3] of scriptId
+                scriptNameHashPtr = (int*)(scriptId + s_scriptNameHashInScriptIdOffset);
+            }
+        }
+
+        private static void InitScriptNameHashPtr()
+        {
+            var task = new GetCScriptNameHashAddrTask();
+
+            ScriptDomain.CurrentDomain.ExecuteTaskWithGameThreadTlsContext(task);
+
+            SaveOriginalScriptNameHashPtr();
+        }
+
+        private static void SaveOriginalScriptNameHashPtr()
+        {
+            if (scriptNameHashPtr == null)
+                return;
+            originalScriptNameHash = *scriptNameHashPtr;
+        }
+
+        public static void SpoofScriptNameHashPtr(int newHash)
+        {
+            if (scriptNameHashPtr == null)
+                return;
+            *scriptNameHashPtr = newHash;
+        }
+
+        public static void RestoreOriginalScriptNameHashPtr()
+        {
+            if (scriptNameHashPtr == null)
+                return;
+            *scriptNameHashPtr = originalScriptNameHash;
         }
 
         #endregion
