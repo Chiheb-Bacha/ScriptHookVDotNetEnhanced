@@ -1,5 +1,9 @@
 namespace GTA.UI
 {
+    /// <summary>
+    /// Corresponds to the MiniMap component names in frontend.xml.
+    /// To be used with <see cref="MiniMapComponentData"/> and its methods.
+    /// </summary>
     public enum MiniMapComponent
     {
         minimap,
