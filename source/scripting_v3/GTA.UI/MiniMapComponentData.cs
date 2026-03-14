@@ -7,6 +7,7 @@ namespace GTA.UI
     {
         private IntPtr _memoryAddress;
         private string _name;
+        private MiniMapComponent _component;
 
         private static readonly string[] MiniMapComponentNames = new string[]
         {
@@ -36,6 +37,7 @@ namespace GTA.UI
                 return;
 
             _name = MiniMapComponentNames[componentNameIndex];
+            _component = component;
             _memoryAddress = SHVDN.NativeMemory.GetMinimapComponentDataPtr(_name);
         }
 
@@ -46,6 +48,14 @@ namespace GTA.UI
         /// The component name used to resolve the minimap component data entry.
         /// </returns>
         public string GetName() { return _name; }
+
+        /// <summary>
+        /// Gets the <see cref="MiniMapComponent"/> of this minimap component instance.
+        /// </summary>
+        /// <returns>
+        /// The <see cref="MiniMapComponent"/> of this instance.
+        /// </returns>
+        public MiniMapComponent GetComponent() { return _component; }
 
         /// <summary>
         /// Updates the alignment, position, and size of this minimap component.
@@ -65,6 +75,8 @@ namespace GTA.UI
         public void SetData(AlignX alignX, AlignY alignY, Vector2 position, Vector2 size)
         {
             SHVDN.NativeMemory.SetMinimapComponentData(_memoryAddress, (byte)alignX, (byte)alignY, position.X, position.Y, size.X, size.Y);
+
+            componentUpdateNow(_component);
         }
 
         /// <summary>
@@ -93,6 +105,24 @@ namespace GTA.UI
 
             string name = MiniMapComponentNames[componentNameIndex];
             SHVDN.NativeMemory.SetMinimapComponentData(name, (byte)alignX, (byte)alignY, position.X, position.Y, size.X, size.Y);
+
+            componentUpdateNow(component);
+        }
+
+        /// <summary>
+        /// A helper that calls the right UpdateNow function for the given component.
+        /// </summary>
+        /// <param name="component">The component for which we are triggering an immediate update.</param>
+        private static void componentUpdateNow(MiniMapComponent component)
+        {
+            if (component == MiniMapComponent.minimap || component == MiniMapComponent.bigmap || component == MiniMapComponent.golf_courses)
+            {
+                SHVDN.NativeMemory.miniMapUpdateNow();
+            }
+            else if (component == MiniMapComponent.pausemap || component == MiniMapComponent.gallery)
+            {
+                SHVDN.NativeMemory.pauseMenuUpdateNow();
+            }
         }
 
         /// <summary>

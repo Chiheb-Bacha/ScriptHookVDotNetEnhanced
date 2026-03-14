@@ -2321,15 +2321,20 @@ namespace SHVDN
 
             if (s_isEnhanced)
             {
-                address = MemScanner.FindPatternBmh("8b 05 ? ? ? ? 8d 50 ? 83 fa ? ba");
+                address = MemScanner.FindPatternBmh("45 31 c0 e8 ? ? ? ? 48 8d 0d ? ? ? ? e8 ? ? ? ? 8b 0d");
+                s_currentLanguageAddr = *(int*)(address + 22) + address + 26;
+                s_previousLanguageAddr = *(int*)(address - 13) + address - 9;
+                s_textManagerInstanceAddr = (ulong)(*(int*)(address + 11) + address + 15);
+                s_textLanguageUpdateNowFunc = (delegate* unmanaged[Stdcall]<ulong, void>)(new IntPtr(*(int*)(address + 16) + address + 20));
+                s_storeCurrentLanguageFunc = (delegate* unmanaged[Stdcall]<uint, void>)(new IntPtr(*(int*)(address + 27) + address + 31));
             }
             else
             {
-                address = MemScanner.FindPatternBmh("8b 15 ? ? ? ? 41 83 c8");
-            }
-            if (address != null)
-            {
-                s_currentLanguageAddr = *(int*)(address + 2) + address + 6;
+                address = MemScanner.FindPatternBmh("48 8d 0d ? ? ? ? 33 d2 89 05 ? ? ? ? e8 ? ? ? ? 48 8d 0d ? ? ? ? e8");
+                s_currentLanguageAddr = *(int*)(address - 17) + address - 13;
+                s_previousLanguageAddr = *(int*)(address + 11) + address + 15;
+                s_textManagerInstanceAddr = (ulong)(*(int*)(address + 23) + address + 27);
+                s_textLanguageUpdateNowFunc = (delegate* unmanaged[Stdcall]<ulong, void>)(new IntPtr(*(int*)(address + 28) + address + 32));
             }
 
             if (s_isEnhanced)
@@ -2453,6 +2458,66 @@ namespace SHVDN
                 s_scriptNameHashInScriptIdOffset = *(address + 2);
             }
             InitScriptNameHashPtr();
+
+            if (s_isEnhanced)
+            {
+                address = MemScanner.FindPatternBmh("48 89 c1 e8 ? ? ? ? e8 ? ? ? ? 48 8b 0d ? ? ? ? 48 85 c9");
+
+                if (address != null)
+                {
+                    s_miniMapUpdateNowFunc = (delegate* unmanaged[Stdcall]<void>)(new IntPtr(*(int*)(address + 9) + address + 13));
+
+                    s_pauseMenuUpdateNowFunc = (delegate* unmanaged[Stdcall]<void>)(new IntPtr(*(int*)(address - 14) + address - 10));
+                }
+            }
+            else
+            {
+                address = MemScanner.FindPatternBmh("e8 ? ? ? ? 48 8b c8 e8 ? ? ? ? e8 ? ? ? ? 48 8b 0d");
+
+                if (address != null)
+                {
+                    s_miniMapUpdateNowFunc = (delegate* unmanaged[Stdcall]<void>)(new IntPtr(*(int*)(address + 14) + address + 18));
+
+                    s_pauseMenuUpdateNowFunc = (delegate* unmanaged[Stdcall]<void>)(new IntPtr(*(int*)(address - 9) + address - 5));
+                }
+            }
+
+            #region -- Steering auto-center when exiting vehicle Patch --
+
+            if (s_isEnhanced)
+            {
+                address = MemScanner.FindPatternBmh("31 c0 80 b9 ? ? ? ? ? 0f 94 c0 48 8d 15 ? ? ? ? f3 0f 10 04 82");
+                if (address != null)
+                {
+                    var autoCenterWhenExitingMovingVehicleInstrAddr = address - 10;
+                    Nop(autoCenterWhenExitingMovingVehicleInstrAddr, 10);
+                }
+
+                address = MemScanner.FindPatternBmh("83 f8 ? 0f 84 ? ? ? ? 8b 87 ? ? ? ? 83 e0 ? 0f 85");
+                if (address != null)
+                {
+                    var autoCenterWhenExitingStationaryVehicleInstrAddr = address + 24;
+                    Nop(autoCenterWhenExitingStationaryVehicleInstrAddr, 10);
+                }
+            }
+            else
+            {
+                address = MemScanner.FindPatternBmh("38 81 ? ? ? ? 75 ? f3 0f 10 05 ? ? ? ? eb");
+                if (address != null)
+                {
+                    var autoCenterWhenExitingMovingVehicleInstrAddr = address - 6;
+                    Nop(autoCenterWhenExitingMovingVehicleInstrAddr, 6);
+                }
+
+                address = MemScanner.FindPatternBmh("24 ? 83 f9 ? 77 ? ba ? ? ? ? 0f a3 ca 72");
+                if (address != null)
+                {
+                    var autoCenterWhenExitingStationaryVehicleInstrAddr = address + 21;
+                    Nop(autoCenterWhenExitingStationaryVehicleInstrAddr, 7);
+                }
+            }
+
+            #endregion
 
             #region -- Bypass model requests block for some models --
 
@@ -8308,6 +8373,59 @@ namespace SHVDN
                 minimapComponents.Add(nameStr, componentPtr);
             }
         }
+
+        static int* scriptNameHashPtr;
+        static int originalScriptNameHash = 0;
+        static byte s_scriptIdInGameScriptHandlerOffset;
+        static byte s_scriptNameHashInScriptIdOffset;
+
+        private static void InitScriptNameHashPtr()
+        {
+            var task = new GetCScriptNameHashAddrTask();
+
+            ScriptDomain.CurrentDomain.ExecuteTaskWithGameThreadTlsContext(task);
+
+            SaveOriginalScriptNameHashPtr();
+        }
+
+        private static void SaveOriginalScriptNameHashPtr()
+        {
+            if (scriptNameHashPtr == null)
+                return;
+            originalScriptNameHash = *scriptNameHashPtr;
+        }
+
+        public static void SpoofScriptNameHashPtr(int newHash)
+        {
+            if (scriptNameHashPtr == null)
+                return;
+            *scriptNameHashPtr = newHash;
+        }
+
+        public static void RestoreOriginalScriptNameHashPtr()
+        {
+            if (scriptNameHashPtr == null)
+                return;
+            *scriptNameHashPtr = originalScriptNameHash;
+        }
+
+        private static delegate* unmanaged[Stdcall]<void> s_pauseMenuUpdateNowFunc;
+        private static delegate* unmanaged[Stdcall]<void> s_miniMapUpdateNowFunc;
+
+        public static void pauseMenuUpdateNow()
+        {
+            var task = new PauseMenuUpdateNowTask();
+
+            ScriptDomain.CurrentDomain.ExecuteTaskWithGameThreadTlsContext(task);
+        }
+
+        public static void miniMapUpdateNow()
+        {
+            var task = new MiniMapUpdateNowTask();
+
+            ScriptDomain.CurrentDomain.ExecuteTaskWithGameThreadTlsContext(task);
+        }
+
         #endregion
 
         #region -- Radar Blip Pool --
@@ -8587,11 +8705,6 @@ namespace SHVDN
             }
         }
 
-        static int* scriptNameHashPtr;
-        static int originalScriptNameHash = 0;
-        static byte s_scriptIdInGameScriptHandlerOffset;
-        static byte s_scriptNameHashInScriptIdOffset;
-
         internal sealed class GetCScriptNameHashAddrTask : IScriptTask
         {
             internal GetCScriptNameHashAddrTask() {}
@@ -8613,34 +8726,39 @@ namespace SHVDN
             }
         }
 
-        private static void InitScriptNameHashPtr()
+        internal sealed class PauseMenuUpdateNowTask : IScriptTask
         {
-            var task = new GetCScriptNameHashAddrTask();
+            internal PauseMenuUpdateNowTask() { }
 
-            ScriptDomain.CurrentDomain.ExecuteTaskWithGameThreadTlsContext(task);
-
-            SaveOriginalScriptNameHashPtr();
+            public void Run()
+            {
+                if (s_pauseMenuUpdateNowFunc != null)
+                    s_pauseMenuUpdateNowFunc();
+            }
         }
 
-        private static void SaveOriginalScriptNameHashPtr()
+        internal sealed class MiniMapUpdateNowTask : IScriptTask
         {
-            if (scriptNameHashPtr == null)
-                return;
-            originalScriptNameHash = *scriptNameHashPtr;
+            internal MiniMapUpdateNowTask() { }
+
+            public void Run()
+            {
+                if (s_miniMapUpdateNowFunc != null)
+                    s_miniMapUpdateNowFunc();
+            }
         }
 
-        public static void SpoofScriptNameHashPtr(int newHash)
+        internal sealed class TextLanguageUpdateNowTask : IScriptTask
         {
-            if (scriptNameHashPtr == null)
-                return;
-            *scriptNameHashPtr = newHash;
-        }
+            internal TextLanguageUpdateNowTask() { }
 
-        public static void RestoreOriginalScriptNameHashPtr()
-        {
-            if (scriptNameHashPtr == null)
-                return;
-            *scriptNameHashPtr = originalScriptNameHash;
+            public void Run()
+            {
+                if (s_textLanguageUpdateNowFunc != null && s_textManagerInstanceAddr != 0)
+                {
+                    s_textLanguageUpdateNowFunc(s_textManagerInstanceAddr);
+                }
+            }
         }
 
         #endregion
@@ -10437,6 +10555,14 @@ namespace SHVDN
             return (value << count) | (value >> (64 - count));
         }
 
+        static void Nop(byte* address, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                *(address + i) = 0x90;
+            }
+        }
+
         public static ushort s_AIHandlingInfoCount;
         public static ulong s_AIHandlingInfoBase;
         public static int s_AIHandlingInfoInHandlingInfoOffset;
@@ -10491,11 +10617,29 @@ namespace SHVDN
         }
 
         private static byte* s_currentLanguageAddr;
+        private static byte* s_previousLanguageAddr;
+        private static delegate* unmanaged[Stdcall]<ulong, void> s_textLanguageUpdateNowFunc;
+        private static delegate* unmanaged[Stdcall]<uint, void> s_storeCurrentLanguageFunc;
+        private static ulong s_textManagerInstanceAddr;
+
+        public static void textLanguageUpdateNow()
+        {
+            var task = new TextLanguageUpdateNowTask();
+
+            ScriptDomain.CurrentDomain.ExecuteTaskWithGameThreadTlsContext(task);
+        }
 
         public static void SetCurrentLanguage(uint language)
         {
-            if (s_currentLanguageAddr == null || language < 0 || language > 12) return;
+            if (s_currentLanguageAddr == null || s_previousLanguageAddr == null || language < 0 || language > 12 || (*(uint*)s_currentLanguageAddr) == language) return;
+
             *(uint*)s_currentLanguageAddr = language;
+            *(uint*)s_previousLanguageAddr = language;
+
+            textLanguageUpdateNow();
+
+            if (s_isEnhanced && s_storeCurrentLanguageFunc != null)
+                s_storeCurrentLanguageFunc(language);
         }
 
         #endregion
