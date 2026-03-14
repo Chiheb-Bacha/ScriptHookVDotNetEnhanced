@@ -2322,19 +2322,31 @@ namespace SHVDN
             if (s_isEnhanced)
             {
                 address = MemScanner.FindPatternBmh("45 31 c0 e8 ? ? ? ? 48 8d 0d ? ? ? ? e8 ? ? ? ? 8b 0d");
-                s_currentLanguageAddr = *(int*)(address + 22) + address + 26;
-                s_previousLanguageAddr = *(int*)(address - 13) + address - 9;
-                s_textManagerInstanceAddr = (ulong)(*(int*)(address + 11) + address + 15);
-                s_textLanguageUpdateNowFunc = (delegate* unmanaged[Stdcall]<ulong, void>)(new IntPtr(*(int*)(address + 16) + address + 20));
-                s_storeCurrentLanguageFunc = (delegate* unmanaged[Stdcall]<uint, void>)(new IntPtr(*(int*)(address + 27) + address + 31));
+                if (address != null)
+                {
+                    s_currentLanguageAddr = *(int*)(address + 22) + address + 26;
+                    s_previousLanguageAddr = *(int*)(address - 13) + address - 9;
+                    s_textManagerInstanceAddr = (ulong)(*(int*)(address + 11) + address + 15);
+                    s_textLanguageUpdateNowFunc = (delegate* unmanaged[Stdcall]<ulong, void>)(new IntPtr(*(int*)(address + 16) + address + 20));
+                    s_storeCurrentLanguageFunc = (delegate* unmanaged[Stdcall]<uint, void>)(new IntPtr(*(int*)(address + 27) + address + 31));
+                }
             }
             else
             {
                 address = MemScanner.FindPatternBmh("48 8d 0d ? ? ? ? 33 d2 89 05 ? ? ? ? e8 ? ? ? ? 48 8d 0d ? ? ? ? e8");
-                s_currentLanguageAddr = *(int*)(address - 17) + address - 13;
-                s_previousLanguageAddr = *(int*)(address + 11) + address + 15;
-                s_textManagerInstanceAddr = (ulong)(*(int*)(address + 23) + address + 27);
-                s_textLanguageUpdateNowFunc = (delegate* unmanaged[Stdcall]<ulong, void>)(new IntPtr(*(int*)(address + 28) + address + 32));
+                if (address != null)
+                {
+                    s_currentLanguageAddr = *(int*)(address - 17) + address - 13;
+                    s_previousLanguageAddr = *(int*)(address + 11) + address + 15;
+                    s_textManagerInstanceAddr = (ulong)(*(int*)(address + 23) + address + 27);
+                    s_textLanguageUpdateNowFunc = (delegate* unmanaged[Stdcall]<ulong, void>)(new IntPtr(*(int*)(address + 28) + address + 32));
+
+                    address = MemScanner.FindPatternBmh("e8 ? ? ? ? 8b cf e8 ? ? ? ? b0 01");
+                    if (address != null)
+                    {
+                        s_storeCurrentLanguageFunc = (delegate* unmanaged[Stdcall]<uint, void>)(new IntPtr(*(int*)(address + 8) + address + 12));
+                    }
+                }
             }
 
             if (s_isEnhanced)
@@ -10638,7 +10650,7 @@ namespace SHVDN
 
             textLanguageUpdateNow();
 
-            if (s_isEnhanced && s_storeCurrentLanguageFunc != null)
+            if (s_storeCurrentLanguageFunc != null)
                 s_storeCurrentLanguageFunc(language);
         }
 
