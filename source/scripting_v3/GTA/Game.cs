@@ -129,7 +129,7 @@ namespace GTA
             : new Blip(SHVDN.NativeMemory.GetNorthBlip());
 
         /// <summary>
-        /// Gets the current game language.
+        /// Gets or sets the current game language.
         /// </summary>
         public static Language Language {
             get => Function.Call<Language>(Hash.GET_CURRENT_LANGUAGE);
