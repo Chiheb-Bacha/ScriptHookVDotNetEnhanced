@@ -881,6 +881,33 @@ namespace GTA
         }
 
         /// <summary>
+        /// Toggles the auto-cenetering behavior when exiting a vehicle on or off.
+        /// </summary>
+        /// <param name="value"><see langword="true"/> to enable auto-centering; otherwise, <see langword="false"/></param>
+        /// <remarks>Note that auto-centering is the default behavior of the game, which is otherwise altered using a memory patch.</remarks>
+        public static void ToggleSteeringAutoCenteringWhenExitingVehicle(bool value)
+        {
+            if (value)
+            {
+                NativeMemory.UninstallAutoCenterWhenExitingVehiclePatch();
+            }
+            else
+            {
+                NativeMemory.InstallAutoCenterWhenExitingVehiclePatch();
+            }
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether wheels are auto-centered upon exiting a vehicle.
+        /// </summary>
+        /// <returns><see langword="true"/> if wheels are auto-centered when exiting a vehicle; otherwise, <see langword="false"/></returns>
+        /// <remarks>Note that auto-centering is the default behavior of the game, which is otherwise altered using a memory patch.</remarks>
+        public static bool IsSteeringAutoCenteringWhenExitingVehicleActive()
+        {
+            return !NativeMemory.IsAutoCenterWhenExitingVehiclePatched();
+        }
+
+        /// <summary>
         /// Adds a gxt entry hash as a replacement for another gxt entry hash used by the game. Hashes can be found inside <c>.gxt2</c> text files.
         /// </summary>
         /// <param name="originalHash">The original gxt hash, which can be found in <c>.gxt2</c> text files</param>

@@ -2496,36 +2496,57 @@ namespace SHVDN
 
             #region -- Steering auto-center when exiting vehicle Patch --
 
+            autoCenterWhenExitingMovingVehicleNumBytes = s_isEnhanced ? 10 : 6;
+            s_autoCenterWhenExitingMovingVehicleOriginalBytes = new byte[autoCenterWhenExitingMovingVehicleNumBytes];
+
+            autoCenterWhenExitingStationaryVehicleNumBytes = s_isEnhanced ? 10 : 7;
+            s_autoCenterWhenExitingStationaryVehicleOriginalBytes = new byte[autoCenterWhenExitingStationaryVehicleNumBytes];
+
+            byte* tmpAddr1;
+            byte* tmpAddr2;
+
             if (s_isEnhanced)
             {
-                address = MemScanner.FindPatternBmh("31 c0 80 b9 ? ? ? ? ? 0f 94 c0 48 8d 15 ? ? ? ? f3 0f 10 04 82");
-                if (address != null)
+                tmpAddr1 = MemScanner.FindPatternBmh("31 c0 80 b9 ? ? ? ? ? 0f 94 c0 48 8d 15 ? ? ? ? f3 0f 10 04 82");
+                if (tmpAddr1 != null)
                 {
-                    var autoCenterWhenExitingMovingVehicleInstrAddr = address - 10;
-                    Nop(autoCenterWhenExitingMovingVehicleInstrAddr, 10);
+                    s_autoCenterWhenExitingMovingVehicleInstrAddr = tmpAddr1 - 10;
                 }
 
-                address = MemScanner.FindPatternBmh("83 f8 ? 0f 84 ? ? ? ? 8b 87 ? ? ? ? 83 e0 ? 0f 85");
-                if (address != null)
+                tmpAddr2 = MemScanner.FindPatternBmh("83 f8 ? 0f 84 ? ? ? ? 8b 87 ? ? ? ? 83 e0 ? 0f 85");
+                if (tmpAddr2 != null)
                 {
-                    var autoCenterWhenExitingStationaryVehicleInstrAddr = address + 24;
-                    Nop(autoCenterWhenExitingStationaryVehicleInstrAddr, 10);
+                    s_autoCenterWhenExitingStationaryVehicleInstrAddr = tmpAddr2 + 24;
                 }
             }
             else
             {
-                address = MemScanner.FindPatternBmh("38 81 ? ? ? ? 75 ? f3 0f 10 05 ? ? ? ? eb");
-                if (address != null)
+                tmpAddr1 = MemScanner.FindPatternBmh("38 81 ? ? ? ? 75 ? f3 0f 10 05 ? ? ? ? eb");
+                if (tmpAddr1 != null)
                 {
-                    var autoCenterWhenExitingMovingVehicleInstrAddr = address - 6;
-                    Nop(autoCenterWhenExitingMovingVehicleInstrAddr, 6);
+                    s_autoCenterWhenExitingMovingVehicleInstrAddr = tmpAddr1 - 6;
                 }
 
-                address = MemScanner.FindPatternBmh("24 ? 83 f9 ? 77 ? ba ? ? ? ? 0f a3 ca 72");
-                if (address != null)
+                tmpAddr2 = MemScanner.FindPatternBmh("24 ? 83 f9 ? 77 ? ba ? ? ? ? 0f a3 ca 72");
+                if (tmpAddr2 != null)
                 {
-                    var autoCenterWhenExitingStationaryVehicleInstrAddr = address + 21;
-                    Nop(autoCenterWhenExitingStationaryVehicleInstrAddr, 7);
+                    s_autoCenterWhenExitingStationaryVehicleInstrAddr = tmpAddr2 + 21;
+                }
+            }
+
+            if (tmpAddr1 != null)
+            {
+                fixed (byte* dst = s_autoCenterWhenExitingMovingVehicleOriginalBytes)
+                {
+                    copyBytes(s_autoCenterWhenExitingMovingVehicleInstrAddr, dst, autoCenterWhenExitingMovingVehicleNumBytes);
+                }
+            }
+
+            if (tmpAddr2 != null)
+            {
+                fixed (byte* dst = s_autoCenterWhenExitingStationaryVehicleOriginalBytes)
+                {
+                    copyBytes(s_autoCenterWhenExitingStationaryVehicleInstrAddr, dst, autoCenterWhenExitingStationaryVehicleNumBytes);
                 }
             }
 
@@ -10434,10 +10455,49 @@ namespace SHVDN
 
         public static bool IsSelectionWheelsPatched()
         {
-            return (*(byte*)s_fadeInEffectFuncAddr == 0xC3) && (*(byte*)s_fadeOutEffectFuncAddr == 0xC3)
-                && (*(byte*)s_selectionWheelTimescalePatchAddr == s_selectionWheelTimeScalePatchPatchBytesLegacy[0])
+            return (*s_fadeInEffectFuncAddr == 0xC3) && (*s_fadeOutEffectFuncAddr == 0xC3)
+                && (*s_selectionWheelTimescalePatchAddr == s_selectionWheelTimeScalePatchPatchBytesLegacy[0])
                 && (*(byte*)(s_selectionWheelTimescalePatchAddr + 1) == s_selectionWheelTimeScalePatchPatchBytesLegacy[1])
                 && (*(uint*)s_spWeaponWheelSoundHashAddr == 0xf1adfd1a); // joaat("WeaponWheel_MP")
+        }
+
+        private static int autoCenterWhenExitingMovingVehicleNumBytes;
+        private static byte* s_autoCenterWhenExitingMovingVehicleInstrAddr;
+        private static byte[] s_autoCenterWhenExitingMovingVehicleOriginalBytes;
+
+        private static int autoCenterWhenExitingStationaryVehicleNumBytes;
+        private static byte* s_autoCenterWhenExitingStationaryVehicleInstrAddr;
+        private static byte[] s_autoCenterWhenExitingStationaryVehicleOriginalBytes;
+
+        public static void InstallAutoCenterWhenExitingVehiclePatch()
+        {
+            Nop(s_autoCenterWhenExitingMovingVehicleInstrAddr, autoCenterWhenExitingMovingVehicleNumBytes);
+            Nop(s_autoCenterWhenExitingStationaryVehicleInstrAddr, autoCenterWhenExitingStationaryVehicleNumBytes);
+        }
+
+        public static void UninstallAutoCenterWhenExitingVehiclePatch()
+        {
+            fixed (byte* src1 = s_autoCenterWhenExitingMovingVehicleOriginalBytes)
+            {
+                copyBytes(src1, s_autoCenterWhenExitingMovingVehicleInstrAddr, autoCenterWhenExitingMovingVehicleNumBytes);
+            }
+            
+            fixed(byte* src2 = s_autoCenterWhenExitingStationaryVehicleOriginalBytes)
+            {
+                copyBytes(src2, s_autoCenterWhenExitingStationaryVehicleInstrAddr, autoCenterWhenExitingStationaryVehicleNumBytes);
+            }
+        }
+
+        public static bool IsAutoCenterWhenExitingVehiclePatched()
+        {
+            return *s_autoCenterWhenExitingMovingVehicleInstrAddr == 0x90 && *s_autoCenterWhenExitingStationaryVehicleInstrAddr == 0x90;
+        }
+
+        // This will be called before the script domain is unloaded
+        // Uninstall all patches here, which need to store the original bytes before they are installed so that they can be toggled on and off
+        public static void UninstallAllPatches()
+        {
+            UninstallAutoCenterWhenExitingVehiclePatch();
         }
 
         #endregion
@@ -10449,11 +10509,40 @@ namespace SHVDN
             Marshal.Copy(bytes, 0, new IntPtr(address), bytes.Length);
         }
 
+        static void jmpPatchHelper(byte* address, byte jmpLength)
+        {
+            int jmpInstructionLength = 2;
+            byte[] patchBytes = { 0xEB, jmpLength, 0x90 };
+            Marshal.Copy(patchBytes, 0, new IntPtr(address), patchBytes.Length);
+            int bytesToWriteInstructions = jmpLength - patchBytes.Length + jmpInstructionLength;
+            byte[] nopBytes = Enumerable.Repeat((byte)0x90, bytesToWriteInstructions).ToArray();
+            Marshal.Copy(nopBytes, 0, new IntPtr(address + patchBytes.Length), nopBytes.Length);
+        }
+
+        static ulong Rol(ulong value, int count)
+        {
+            count &= 63;
+            return (value << count) | (value >> (64 - count));
+        }
+
+        static void Nop(byte* address, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                *(address + i) = 0x90;
+            }
+        }
+
+        static void copyBytes(byte* srcAddr, byte* dstAddr, int length)
+        {
+            for (int i = 0; i < length; i++)
+            {
+                dstAddr[i] = srcAddr[i];
+            }
+        }
         #endregion
 
-
         #region -- Helper Functions for Enhanced --
-
 
         private static ulong s_entityPosVFuncSecondArgument;
         private static ulong s_entityVPtr;
@@ -10549,30 +10638,6 @@ namespace SHVDN
         static ulong GetVehiclePedIsIn(ulong address)
         {
             return *(ulong*)((long)address + s_pedEntityInVehicleCheckOffset);
-        }
-
-        static void jmpPatchHelper(byte* address, byte jmpLength)
-        {
-            int jmpInstructionLength = 2;
-            byte[] patchBytes = { 0xEB, jmpLength, 0x90 };
-            Marshal.Copy(patchBytes, 0, new IntPtr(address), patchBytes.Length);
-            int bytesToWriteInstructions = jmpLength - patchBytes.Length + jmpInstructionLength;
-            byte[] nopBytes = Enumerable.Repeat((byte)0x90, bytesToWriteInstructions).ToArray();
-            Marshal.Copy(nopBytes, 0, new IntPtr(address + patchBytes.Length), nopBytes.Length);
-        }
-
-        static ulong Rol(ulong value, int count)
-        {
-            count &= 63;
-            return (value << count) | (value >> (64 - count));
-        }
-
-        static void Nop(byte* address, int count)
-        {
-            for (int i = 0; i < count; i++)
-            {
-                *(address + i) = 0x90;
-            }
         }
 
         public static ushort s_AIHandlingInfoCount;

@@ -385,6 +385,8 @@ namespace SHVDN
             // Need to remove all the hooks here, especially CallHooks, otherwise they won't be disabled,
             // which causes the game to crash when unmanaged code calls the hooks inside this domain after it was unloaded.
             Hooking.RemoveAllHooks();
+            // Some patches need to be reset when reloading SHVDNE so that they can be applied again correctly when we load in.
+            NativeMemory.UninstallAllPatches();
         }
 
         /// <summary>
