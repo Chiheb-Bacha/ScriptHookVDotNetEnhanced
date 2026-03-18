@@ -133,6 +133,9 @@ namespace SHVDN
                 }
             }
 
+            // TODO: Pattern scanning directly with this function (mainly for Legacy) normally doesn't log
+            // This was added temporarily to uncover not found patterns and a refactoring is needed to fade out the usage of this function in favor of the one using ghidra/ida-style patterns.
+            // LogMemPatternNotFound(pattern, mask, startAddress, size);
             return null;
         }
 
