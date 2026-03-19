@@ -140,6 +140,7 @@ namespace GTA
         v1_0_3586_0,
         v1_0_3717_0,
         v1_0_3751_0,
+        v1_0_3788_0,
 
         // Enhanced builds
         v2_0_811_8 = 1001,
@@ -149,6 +150,7 @@ namespace GTA
         v2_0_889_15,
         v2_0_889_19,
         v2_0_1013_17,
+        v2_0_1013_33,
 
         [Obsolete("Use v1_0_3407_0 instead.", false), EditorBrowsable(EditorBrowsableState.Never)]
         V1_0_3407_0 = v1_0_3407_0,
