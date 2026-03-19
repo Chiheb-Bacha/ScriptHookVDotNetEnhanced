@@ -1121,7 +1121,7 @@ namespace SHVDN
                 address = MemScanner.FindPatternBmh("3b 35 ? ? ? ? 74 ? 48 81 fd");
                 if (address != null)
                 {
-                    s_radarBlipPoolAddress = (ulong*)(*(int*)(address + 2) + address + 6);
+                    s_radarBlipPoolAddress = (ulong*)(*(int*)(address - 4) + address);
                 }
             }
 
@@ -1168,7 +1168,7 @@ namespace SHVDN
             }
             else
             {
-                address = MemScanner.FindPatternBmh("\x41\xB8\x07\x00\x00\x00\x8B\xD0\x89\x05\x00\x00\x00\x00\x41\x8D\x48\xFC", "xxxxxxxxxx????xxxx");
+                address = MemScanner.FindPatternBmh("41 b8 07 00 00 00 8b d0 89 05 ? ? ? ? 41 8d 48 fc");
                 if (address != null)
                 {
                     s_northRadarBlipHandleAddress = (int*)(*(int*)(address + 10) + address + 14);
@@ -1186,7 +1186,7 @@ namespace SHVDN
             }
             else
             {
-                address = MemScanner.FindPatternBmh("\x41\xB8\x06\x00\x00\x00\x8B\xD0\x89\x05\x00\x00\x00\x00\x41\x8D\x48\xFD", "xxxxxxxxxx????xxxx");
+                address = MemScanner.FindPatternBmh("41 b8 06 00 00 00 8b d0 89 05 ? ? ? ? 41 8d 48 fd");
                 if (address != null)
                 {
                     s_centerRadarBlipHandleAddress = (int*)(*(int*)(address + 10) + address + 14);
