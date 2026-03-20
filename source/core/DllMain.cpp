@@ -646,7 +646,7 @@ static void ScriptHookVDotNet_ManagedInit()
         console->CommandHistory = stashedConsoleCommandHistory;
 
         // Print welcome message
-        console->PrintInfo("~c~--- Script Hook V .Net Enhanced " SHVDN_VERSION " (1.1.0.3) ---");
+        console->PrintInfo("~c~--- Script Hook V .Net Enhanced " SHVDN_VERSION " (1.1.0.5) ---");
         console->PrintInfo("~c~--- Type \"Help()\" to print an overview of available commands ---");
 
         ScriptHookVDotNet::SendPendingMessagesToConsole(console, pendingLogMessageInfo);

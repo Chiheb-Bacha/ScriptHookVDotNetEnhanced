@@ -296,7 +296,7 @@ namespace SHVDN
         /// <param name="apiBasePath">The path to the root directory containing the scripting API assemblies.</param>
         private ScriptDomain(string apiBasePath)
         {
-            Log.Message(Log.Level.Info, $"ScriptHookV .Net Enhanced 3.9.0.3 (1.1.0.3)");
+            Log.Message(Log.Level.Info, $"ScriptHookV .Net Enhanced 3.9.0.5 (1.1.0.5)");
             // Each application domain has its own copy of this static variable, so only need to set it once
             CurrentDomain = this;
 
