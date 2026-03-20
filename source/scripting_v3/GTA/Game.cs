@@ -835,7 +835,7 @@ namespace GTA
         }
 
         /// <summary>
-        /// Gets the the script global, which can be used with <see cref="NativeMemory.GetGlobalPtr" />.
+        /// Gets the the script global index, which can be used with <see cref="GlobalVariable.Get(int)" />.
         /// </summary>
         /// <param name="address">The address returned from a pattern search.</param>
         /// <param name="offset">The offset from the given address, where the global can be found.</param>
