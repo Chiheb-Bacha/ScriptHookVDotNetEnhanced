@@ -126,6 +126,7 @@ namespace GTA
             { ExeVersionConsts.v2_0_889_15, GameVersion.v2_0_889_15 },
             { ExeVersionConsts.v2_0_889_19, GameVersion.v2_0_889_19 },
             { ExeVersionConsts.v2_0_1013_17, GameVersion.v2_0_1013_17 },
+            { ExeVersionConsts.v2_0_1013_29, GameVersion.v2_0_1013_29 },
             { ExeVersionConsts.v2_0_1013_33, GameVersion.v2_0_1013_33 },
         };
 

@@ -150,6 +150,7 @@ namespace GTA
         v2_0_889_15,
         v2_0_889_19,
         v2_0_1013_17,
+        v2_0_1013_29,
         v2_0_1013_33,
 
         [Obsolete("Use v1_0_3407_0 instead.", false), EditorBrowsable(EditorBrowsableState.Never)]
