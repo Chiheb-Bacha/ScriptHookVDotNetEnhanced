@@ -3,6 +3,9 @@
 // License: https://github.com/scripthookvdotnet/scripthookvdotnet#license
 //
 
+using System;
+using System.ComponentModel;
+
 namespace GTA
 {
     public enum VehicleHash : uint
@@ -400,7 +403,7 @@ namespace GTA
         Kanjo = 409049982u,
         KanjoSJ = 4230891418u,
         Khamelion = 544021352u,
-        Khanjari = 2859440138u,
+        Khanjali = 2859440138u,
         Komoda = 3460613305u,
         Kosatka = 1336872304u,
         Krieger = 3630826055u,
@@ -857,5 +860,9 @@ namespace GTA
         ZR3803 = 2816263004u,
         ZType = 758895617u,
         Z190 = 838982985u,
+
+        [Obsolete("`VehicleHash.Khanjari` is incorrectly named. Use `VehicleHash.Khanjali` instead."),
+    EditorBrowsable(EditorBrowsableState.Never)]
+        Khanjari = Khanjali,
     }
 }
