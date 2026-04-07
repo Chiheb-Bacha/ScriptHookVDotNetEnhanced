@@ -5274,7 +5274,7 @@ namespace SHVDN
                 if (s_isEnhanced)
                 {
                     // From SET_PED_FIRING_PATTERN
-                    address = MemScanner.FindPatternBmh("89 b1 ? ? ? ? 48 81 c1 ? ? ? ? 89 f2");
+                    address = MemScanner.FindPatternBmh("89 91 ? ? ? ? 48 81 c1 ? ? ? ? 41 b0 ? e8 ? ? ? ? 48 8b 87");
                     if (address != null)
                     {
                         FiringPatternOffset = *(int*)(address + 2);
