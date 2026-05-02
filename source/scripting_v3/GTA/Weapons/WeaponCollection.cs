@@ -3,10 +3,11 @@
 // License: https://github.com/scripthookvdotnet/scripthookvdotnet#license
 //
 
-using GTA.Native;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
+using GTA.Native;
 
 namespace GTA
 {
@@ -284,7 +285,18 @@ namespace GTA
         /// <param name="weaponName">The weapon name.</param>
         /// <param name="forceInHand">Specifies if the owner ped will equip in hands immediately.</param>
         /// <returns><see langword="true"/> if the ped has the weapon; otherwise, <see langword="false"/>.</returns>
-        public bool IsWeaponValid(string weaponName, bool forceInHand) => Select((WeaponHash)StringHash.AtStringHashUtf8(weaponName), forceInHand);
+        public bool Select(string weaponName, bool forceInHand) => Select((WeaponHash)StringHash.AtStringHashUtf8(weaponName), forceInHand);
+
+        /// <summary>
+        /// Selects the specified weapon.
+        /// </summary>
+        /// <param name="weaponName">The weapon name.</param>
+        /// <param name="forceInHand">Specifies if the owner ped will equip in hands immediately.</param>
+        /// <returns><see langword="true"/> if the ped has the weapon; otherwise, <see langword="false"/>.</returns>
+        /// <remarks>This method is kept for backward compatibility, but replaced by WeaponCollection.Select(string, bool) for compatibility reasons with SHVDN 3.7.0 nightly v114+</remarks>
+        [Obsolete("WeaponCollection.IsWeaponValid(string, bool) is obsolete. Use WeaponCollection.Select(string, bool) instead.")]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public bool IsWeaponValid(string weaponName, bool forceInHand) => Select(weaponName, forceInHand); // delegate to its replacement
 
         /// <summary>
         /// Gives the specified weapon if the owner <see cref="Ped"/> does not have one, or selects the weapon if they have one and <paramref name="equipNow"/> is set to <see langword="true" />.

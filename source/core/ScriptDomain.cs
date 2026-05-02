@@ -183,6 +183,8 @@ namespace SHVDN
         {
             Log.Message(Log.Level.Debug, "Initializing NativeMemory members...");
 
+            long initialTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+
             // We have a lot of offset and function address data to initialize, so initialize them in parallel
             // (except for path find data, which has a little amount of data)
             System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(NativeMemory.PathFind).TypeHandle);
@@ -191,6 +193,10 @@ namespace SHVDN
                 () => { System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(NativeMemory.Vehicle).TypeHandle); },
                 () => { System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(NativeMemory.Ped).TypeHandle); }
             );
+
+            long duration = DateTimeOffset.Now.ToUnixTimeMilliseconds() - initialTime;
+
+            Log.Message(Log.Level.Debug, $"NativeMemory took {duration} milliseconds");
         }
 
         /// <summary>

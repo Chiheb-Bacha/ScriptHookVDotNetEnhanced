@@ -156,6 +156,8 @@ namespace GTA.Math
             float num = 1 / length;
             X *= num;
             Y *= num;
+            Z *= num;
+            W *= num;
         }
 
         /// <summary>
@@ -282,7 +284,7 @@ namespace GTA.Math
         /// </summary>
         /// <param name="value">The vector to negate.</param>
         /// <returns>A vector facing in the opposite direction.</returns>
-        public static Vector4 operator -(Vector4 value) => new(-value.X, -value.Y, -value.Z, -value.Z);
+        public static Vector4 operator -(Vector4 value) => new(-value.X, -value.Y, -value.Z, -value.W);
 
         /// <summary>
         /// Scales a vector by the given value.
@@ -290,7 +292,7 @@ namespace GTA.Math
         /// <param name="vector">The vector to scale.</param>
         /// <param name="scale">The amount by which to scale the vector.</param>
         /// <returns>The scaled vector.</returns>
-        public static Vector4 operator *(Vector4 vector, float scale) => new(vector.X * scale, vector.Y * scale, vector.Z * scale, vector.Z * scale);
+        public static Vector4 operator *(Vector4 vector, float scale) => new(vector.X * scale, vector.Y * scale, vector.Z * scale, vector.W * scale);
 
         /// <summary>
         /// Scales a vector by the given value.
