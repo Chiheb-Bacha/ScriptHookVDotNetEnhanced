@@ -1858,7 +1858,7 @@ namespace SHVDN
                 address = MemScanner.FindPatternBmh("ff 50 ? 84 c0 74 ? f6 87 ? ? ? ? ? 75 ? 48 8b 8f");
                 if (address != null)
                 {
-                    int pedIntelligenceOffset = *(int*)(address + 18);
+                    int pedIntelligenceOffset = *(int*)(address + 19);
                     PedPlayerInfoOffset = pedIntelligenceOffset + 0x8;
                 }
             }
